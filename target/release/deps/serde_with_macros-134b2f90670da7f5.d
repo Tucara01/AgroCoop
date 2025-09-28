@@ -1,0 +1,8 @@
+C:\Users\UsuarioCompuElite\Desktop\ideathon revancha\proyecto\target\release\deps\serde_with_macros-134b2f90670da7f5.d: C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\lib.rs C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\apply.rs C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\lazy_bool.rs C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\utils.rs
+
+C:\Users\UsuarioCompuElite\Desktop\ideathon revancha\proyecto\target\release\deps\serde_with_macros-134b2f90670da7f5.dll: C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\lib.rs C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\apply.rs C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\lazy_bool.rs C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\utils.rs
+
+C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\lib.rs:
+C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\apply.rs:
+C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\lazy_bool.rs:
+C:\Users\UsuarioCompuElite\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_with_macros-3.14.1\src\utils.rs:

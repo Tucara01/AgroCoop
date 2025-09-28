@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compra Colectiva - Stellar dApp</title>
+    <script src="https://unpkg.com/@stellar/stellar-sdk@12.1.0/dist/stellar-sdk.min.js"></script>
+    <script type="module">
+        // Importar Freighter API usando ES6 modules como indica la documentación oficial
+        import freighterApi from 'https://cdn.skypack.dev/@stellar/freighter-api';
+        
+        // Hacer disponible globalmente para compatibilidad
+        window.freighterApi = freighterApi;
+        window.freighter = freighterApi; // Alias para compatibilidad
+        
+        console.log('✅ Freighter API importado correctamente:', freighterApi);
+        
+        // Disparar evento personalizado cuando esté listo
+        window.dispatchEvent(new CustomEvent('freighter-ready'));
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .wallet-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .wallet-info {
+            background: #e8f4f8;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: left;
+            border: 2px solid #bee5eb;
+        }
+
+        .wallet-info h4 {
+            margin: 0 0 10px 0;
+            color: #0c5460;
+        }
+
+        .wallet-info p {
+            margin: 5px 0;
+            color: #495057;
+        }
+
+        .wallet-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* Estilos para el panel de dirección de wallet */
+        .wallet-address-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .wallet-address-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .wallet-address-header h4 {
+            margin: 0;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .connection-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .wallet-address-content {
+            margin-bottom: 20px;
+        }
+
+        .address-section {
+            margin-bottom: 15px;
+        }
+
+        .address-section label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .address-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .address-display code {
+            flex: 1;
+            background: none;
+            color: #fbbf24;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+            padding: 0;
+        }
+
+        .btn-copy {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .address-short {
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .address-short span {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .network-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .network-section label {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+        }
+
+        .network-badge {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .status-connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .pool-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .pool-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .pool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .pool-id {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .pool-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-funded {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-expired {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #28a745, #20c997);
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .pool-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .info-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .connected {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .disconnected {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .pool-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 Compra Colectiva</h1>
+            <p>Plataforma descentralizada para compras grupales en Stellar</p>
+        </div>
+
+        <!-- Sección de Wallet -->
+        <div class="wallet-section">
+            <h3>🔗 Conexión de Wallet</h3>
+            <div id="wallet-status">
+                <span id="status-indicator" class="status-indicator status-loading">🔄 Verificando Freighter...</span>
+                <br><br>
+                <button class="btn" id="connect-btn" onclick="connectWallet()">Conectar Freighter</button>
+                <button class="btn btn-danger" id="disconnect-btn" onclick="disconnectWallet()" style="display: none;">Desconectar</button>
+                <button class="btn" id="retry-btn" onclick="retryFreighterDetection()" style="display: none;">🔄 Reintentar Detección</button>
+            </div>
+            
+            <!-- Panel de Dirección de Wallet -->
+            <div id="wallet-address-panel" class="wallet-address-panel" style="display: none;">
+                <div class="wallet-address-header">
+                    <h4>🔗 Wallet Conectada</h4>
+                    <div class="connection-badge" id="connection-badge">
+                        <span class="badge-dot"></span>
+                        <span id="connection-text">Conectado</span>
+                    </div>
+                </div>
+                
+                <div class="wallet-address-content">
+                    <div class="address-section">
+                        <label>Dirección de la Wallet:</label>
+                        <div class="address-display">
+                            <code id="full-address">No disponible</code>
+                            <button class="btn-copy" id="copy-address-btn" onclick="copyAddress()" title="Copiar dirección">
+                                📋
+                            </button>
+                        </div>
+                        <div class="address-short">
+                            <span id="short-address">No disponible</span>
+                        </div>
+                    </div>
+                    
+                    <div class="network-section">
+                        <label>Red:</label>
+                        <span class="network-badge" id="network-badge">Testnet</span>
+                    </div>
+                </div>
+                
+                <div class="wallet-actions">
+                    <button class="btn btn-secondary" onclick="getNetworkInfo()" id="network-btn">
+                        🌐 Info de Red
+                    </button>
+                    <button class="btn btn-secondary" onclick="signTestMessage()" id="sign-btn">
+                        ✍️ Firmar Mensaje
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel de información básica (oculto cuando hay wallet conectada) -->
+            <div id="wallet-info" class="wallet-info" style="display: none;">
+                <h4>📋 Información de la Wallet</h4>
+                <p><strong>Dirección:</strong> <span id="user-address">No disponible</span></p>
+                <p><strong>Red:</strong> <span id="network-name">No disponible</span></p>
+                <p><strong>Estado:</strong> <span id="connection-status">Desconectado</span></p>
+                
+                <div class="wallet-actions">
+                    <button class="btn" onclick="getNetworkInfo()" id="network-btn">Obtener Info de Red</button>
+                    <button class="btn" onclick="signTestMessage()" id="sign-btn">Firmar Mensaje</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertas -->
+        <div id="alerts"></div>
+
+        <!-- Grid principal -->
+        <div class="grid">
+            <!-- Crear Pool -->
+            <div class="section">
+                <h3>📝 Crear Pool</h3>
+                <div class="form-group">
+                    <label>Dirección del Proveedor:</label>
+                    <input type="text" id="supplier" placeholder="GABC..." />
+                    <button type="button" class="btn" onclick="generateTestAddress()" style="margin-top: 5px; font-size: 14px; padding: 8px 12px;">
+                        🧪 Usar Dirección de Prueba
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Meta (XLM):</label>
+                    <input type="number" id="goal" placeholder="100" min="1" />
+                </div>
+                <div class="form-group">
+                    <label>Días hasta vencimiento:</label>
+                    <input type="number" id="days" placeholder="30" min="1" />
+                </div>
+                <button class="btn btn-warning me-2" onclick="initializeContract()" id="init-btn" disabled>
+                    🔧 Inicializar Contrato
+                </button>
+                <button class="btn btn-success" onclick="createPool()" id="create-btn" disabled>
+                    Crear Pool
+                </button>
+            </div>
+
+            <!-- Contribuir -->
+            <div class="section">
+                <h3>💰 Contribuir</h3>
+                <div class="form-group">
+                    <label>ID del Pool:</label>
+                    <input type="number" id="contrib-pool-id" placeholder="1" min="1" />
+                </div>
+                <div class="form-group">
+                    <label>Cantidad (XLM):</label>
+                    <input type="number" id="contrib-amount" placeholder="10" min="0.1" step="0.1" />
+                </div>
+                <button class="btn" onclick="contributeToPool()" id="contrib-btn" disabled>
+                    Aprobar y Contribuir
+                </button>
+            </div>
+
+            <!-- Acciones de Pool -->
+            <div class="section">
+                <h3>⚡ Acciones</h3>
+                <div class="form-group">
+                    <label>ID del Pool:</label>
+                    <input type="number" id="action-pool-id" placeholder="1" min="1" />
+                </div>
+                <button class="btn btn-success" onclick="finalizePool()" id="finalize-btn" disabled>
+                    Finalizar Pool
+                </button>
+                <button class="btn btn-danger" onclick="requestRefund()" id="refund-btn" disabled>
+                    Solicitar Reembolso
+                </button>
+                <button class="btn" onclick="getPoolInfo()" id="get-pool-btn" disabled>
+                    Ver Estado
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista de Pools -->
+        <div class="section">
+            <h3>📊 Pools Activos</h3>
+            <button class="btn" onclick="loadActivePools()" id="load-pools-btn" disabled>
+                Cargar Pools
+            </button>
+            <div id="pools-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración
+        const CONFIG = {
+            contractId: 'CBAID77FC57C6LNDGPS2RTTWA6RZY72LXJYQMLZMX3NBO4VSWGXLTVT2',
+            // XLM nativo en Soroban testnet - dirección correcta del contrato de token XLM
+            tokenId: 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC',
+            network: 'testnet',
+            rpcUrl: 'https://soroban-testnet.stellar.org',
+            // Passphrase correcta para testnet
+            networkPassphrase: 'Test SDF Network ; September 2015'
+        };
+
+        // Variables globales
+        let server;
+        let userAddress = null;
+        let isConnected = false;
+        let isFreighterAvailable = false;
+
+        // Elementos DOM
+        const statusIndicator = () => document.getElementById('status-indicator');
+        const connectBtn = () => document.getElementById('connect-btn');
+        const disconnectBtn = () => document.getElementById('disconnect-btn');
+        const walletInfo = () => document.getElementById('wallet-info');
+        const walletAddressPanel = () => document.getElementById('wallet-address-panel');
+        const userAddressSpan = () => document.getElementById('user-address');
+        const networkNameSpan = () => document.getElementById('network-name');
+        const connectionStatusSpan = () => document.getElementById('connection-status');
+        
+        // Referencias para el nuevo panel de dirección
+        const fullAddressSpan = () => document.getElementById('full-address');
+        const shortAddressSpan = () => document.getElementById('short-address');
+        const networkBadgeSpan = () => document.getElementById('network-badge');
+        const connectionTextSpan = () => document.getElementById('connection-text');
+
+        // Inicializar aplicación
+        async function init() {
+            console.log('🚀 Inicializando dApp...');
+            server = new StellarSdk.SorobanRpc.Server(CONFIG.rpcUrl);
+            
+            // Esperar a que se carguen los scripts y verificar disponibilidad
+            let retries = 0;
+            const maxRetries = 10;
+            
+            while (retries < maxRetries) {
+                if (typeof StellarSdk !== 'undefined') {
+                    console.log('✅ Stellar SDK cargado');
+                    break;
+                }
+                await new Promise(resolve => setTimeout(resolve, 500));
+                retries++;
+            }
+            
+            if (retries >= maxRetries) {
+                showAlert('❌ Error: No se pudo cargar Stellar SDK', 'danger');
+                return;
+            }
+            
+            // Mostrar estado inicial mientras verificamos Freighter
+            statusIndicator().textContent = '🔄 Verificando Freighter...';
+            statusIndicator().className = 'status-indicator status-loading';
+            
+            // Verificar Freighter (esto incluye su propio updateUI al final)
+            await checkFreighterAvailability();
+        }
+
+        // Verificar disponibilidad de Freighter usando la API oficial importada
+        async function checkFreighterAvailability() {
+            console.log('🔍 Verificando Freighter usando API oficial importada...');
+            
+            // Esperar a que el módulo ES6 se cargue
+            const waitForFreighterAPI = () => {
+                return new Promise((resolve) => {
+                    // Si ya está disponible
+                    if (window.freighterApi) {
+                        console.log('✅ Freighter API ya disponible');
+                        resolve(true);
+                        return;
+                    }
+                    
+                    // Escuchar evento de carga del módulo
+                    const handleFreighterReady = () => {
+                        console.log('✅ Freighter API cargado desde módulo ES6');
+                        window.removeEventListener('freighter-ready', handleFreighterReady);
+                        resolve(true);
+                    };
+                    
+                    window.addEventListener('freighter-ready', handleFreighterReady);
+                    
+                    // Timeout después de 5 segundos
+                    setTimeout(() => {
+                        window.removeEventListener('freighter-ready', handleFreighterReady);
+                        console.log('❌ Timeout esperando Freighter API');
+                        resolve(false);
+                    }, 5000);
+                });
+            };
+            
+            const apiLoaded = await waitForFreighterAPI();
+            
+            if (apiLoaded && window.freighterApi) {
+                console.log('✅ Freighter API detectado correctamente');
+                
+                // Normalizar API
+                window.freighter = window.freighterApi;
+                
+                await handleFreighterDetected();
+                return;
+            }
+            
+            // Si no se cargó la API, mostrar error específico
+            console.log('❌ Freighter API no se pudo cargar');
+            console.log('💡 Posibles causas:');
+            console.log('   - Problema de red (CDN no disponible)');
+            console.log('   - Navegador no soporta ES6 modules');
+            console.log('   - Bloqueador de contenido bloqueando el CDN');
+            console.log('   - Extensión Freighter no instalada');
+            
+            handleFreighterNotFound();
+        }
+
+        // Manejar Freighter detectado
+        async function handleFreighterDetected() {
+            try {
+                isFreighterAvailable = true;
+                console.log('🎉 Freighter confirmado como disponible');
+                
+                // Verificar métodos disponibles
+                
+                // Verificar si hay una conexión existente
+                let isConnectedResult = false;
+                try {
+                    isConnectedResult = await window.freighter.isConnected();
+                } catch (e) {
+                    console.log('⚠️ No se pudo verificar estado de conexión:', e.message);
+                }
+                
+                if (isConnectedResult) {
+                    try {
+                        // Intentar obtener la clave pública de diferentes maneras
+                        let publicKey = null;
+                        
+                        try {
+                            // Intentar getAddress() primero (más ligero)
+                            const addressResult = await window.freighter.getAddress();
+                            
+                            if (addressResult && !addressResult.error && addressResult.address) {
+                                userAddress = addressResult.address;
+                                isConnected = true;
+                                showAlert('✅ Freighter conectado automáticamente', 'success');
+                                await updateNetworkInfo();
+                            } else {
+                                // Si getAddress() no funciona, intentar requestAccess()
+                                const accessResult = await window.freighter.requestAccess();
+                                
+                                if (accessResult && !accessResult.error && accessResult.address) {
+                                    userAddress = accessResult.address;
+                                    isConnected = true;
+                                    showAlert('✅ Freighter conectado automáticamente', 'success');
+                                    await updateNetworkInfo();
+                                } else {
+                                    showAlert('💡 Freighter detectado. Haz clic en "Conectar" para continuar.', 'info');
+                                }
+                            }
+                        } catch (e) {
+                            console.log('⚠️ Error obteniendo dirección:', e.message);
+                            showAlert('💡 Freighter detectado. Haz clic en "Conectar" para continuar.', 'info');
+                        }
+                    } catch (pkError) {
+                        console.log('⚠️ No hay clave pública disponible, requiere conexión manual:', pkError.message);
+                        showAlert('💡 Freighter detectado. Haz clic en "Conectar" para continuar.', 'info');
+                    }
+                } else {
+                    showAlert('💡 Freighter detectado. Haz clic en "Conectar" para continuar.', 'info');
+                }
+            } catch (error) {
+                console.error('Error manejando Freighter detectado:', error);
+                showAlert('⚠️ Freighter detectado pero con errores: ' + error.message, 'danger');
+                // Aún así, marcar como disponible para permitir intentos de conexión
+                isFreighterAvailable = true;
+            } finally {
+                updateUI();
+            }
+        }
+
+        // Manejar Freighter no encontrado
+        function handleFreighterNotFound() {
+            isFreighterAvailable = false;
+            
+            // Mostrar mensaje específico para el problema de inyección
+            const isChrome = navigator.userAgent.includes('Chrome');
+            let message = '❌ Freighter no se está inyectando correctamente.';
+            
+            if (isChrome) {
+                message += '\n\n🔧 Soluciones para Chrome:';
+                message += '\n1. Verifica que Freighter esté habilitado en chrome://extensions/';
+                message += '\n2. Asegúrate de que "Permitir en modo incógnito" esté activado si usas incógnito';
+                message += '\n3. Recarga la extensión (toggle off/on)';
+                message += '\n4. Reinicia Chrome completamente';
+                message += '\n5. Si el problema persiste, reinstala Freighter';
+            }
+            
+            showAlert(message, 'danger');
+            
+            // Mostrar botones de acción
+            document.getElementById('retry-btn').style.display = 'inline-block';
+            
+            const connectButton = connectBtn();
+            connectButton.textContent = isChrome ? 'Abrir Extensiones Chrome' : 'Instalar Freighter';
+            connectButton.disabled = false;
+            connectButton.onclick = () => {
+                if (isChrome) {
+                    // Abrir página de extensiones de Chrome
+                    window.open('chrome://extensions/', '_blank');
+                    showAlert('ℹ️ Verifica que Freighter esté habilitado, luego usa "Reintentar Detección".', 'info');
+                } else {
+                    window.open('https://freighter.app/', '_blank');
+                    showAlert('ℹ️ Después de instalar Freighter, usa "Reintentar Detección".', 'info');
+                }
+            };
+            
+            updateUI();
+        }
+
+        // Función para reintentar la detección de Freighter
+        async function retryFreighterDetection() {
+            showAlert('🔄 Reintentando detección de Freighter...', 'info');
+            
+            // Resetear estado
+            document.getElementById('retry-btn').style.display = 'none';
+            statusIndicator().textContent = '🔄 Verificando Freighter...';
+            statusIndicator().className = 'status-indicator status-loading';
+            
+            // Reintentar detección
+            await checkFreighterAvailability();
+        }
+
+        // Conectar wallet usando la API oficial correcta
+        async function connectWallet() {
+            if (!isFreighterAvailable) {
+                showAlert('❌ Freighter no está disponible', 'danger');
+                return;
+            }
+
+            try {
+                statusIndicator().textContent = '🔄 Conectando...';
+                statusIndicator().className = 'status-indicator status-loading';
+                connectBtn().disabled = true;
+
+                console.log('🔄 Conectando con Freighter usando API oficial...');
+                
+                // Usar requestAccess() según la documentación oficial
+                // requestAccess() -> Promise<{ address: string } & { error?: string }>
+                console.log('🔑 Llamando a requestAccess()...');
+                const accessResult = await window.freighter.requestAccess();
+                console.log('🔑 requestAccess() resultado:', accessResult);
+                
+                // Verificar si hay error
+                if (accessResult.error) {
+                    throw new Error(accessResult.error);
+                }
+                
+                // Obtener la dirección del resultado
+                if (!accessResult.address || typeof accessResult.address !== 'string') {
+                    throw new Error('No se recibió una dirección válida de Freighter');
+                }
+                
+                // Guardar la dirección
+                userAddress = accessResult.address;
+                isConnected = true;
+                
+                console.log('✅ Wallet conectada exitosamente');
+                console.log('📍 Dirección:', userAddress);
+                
+                // Actualizar información de red
+                await updateNetworkInfo();
+                
+                // Mostrar éxito
+                showAlert('✅ Wallet conectada exitosamente', 'success');
+                
+            } catch (error) {
+                console.error('❌ Error conectando wallet:', error);
+                showAlert('❌ Error al conectar: ' + error.message, 'danger');
+                isConnected = false;
+                userAddress = null;
+            } finally {
+                connectBtn().disabled = false;
+                updateUI();
+            }
+        }
+
+        // Desconectar wallet
+        function disconnectWallet() {
+            isConnected = false;
+            userAddress = null;
+            showAlert('ℹ️ Wallet desconectada', 'info');
+            updateUI();
+        }
+
+        // Actualizar información de red usando la API oficial
+        async function updateNetworkInfo() {
+            if (!isConnected || !userAddress) return;
+            
+            try {
+                console.log('🌐 Obteniendo información de red...');
+                
+                // Usar getNetworkDetails() según la documentación oficial
+                // getNetworkDetails() -> Promise<{ network: string; networkUrl: string; networkPassphrase: string; sorobanRpcUrl?: string; } & { error?: string; }>
+                const networkDetails = await window.freighter.getNetworkDetails();
+                console.log('🌐 getNetworkDetails() resultado:', networkDetails);
+                
+                if (networkDetails.error) {
+                    throw new Error(networkDetails.error);
+                }
+                
+                // Actualizar la UI con la información obtenida
+                const networkName = networkDetails.network || 'Testnet (por defecto)';
+                document.getElementById('network-name').textContent = networkName;
+                networkBadgeSpan().textContent = networkName;
+                
+                // Los elementos passphrase y sorobanRpc no existen en la UI actual, solo los logueamos
+                console.log('📝 Passphrase:', networkDetails.networkPassphrase);
+                console.log('🔗 Soroban RPC:', networkDetails.sorobanRpcUrl);
+                
+                console.log('✅ Información de red actualizada correctamente');
+                
+            } catch (error) {
+                console.error('❌ Error obteniendo información de red:', error);
+                
+                // Usar valores por defecto en caso de error
+                const defaultNetwork = 'Testnet (por defecto)';
+                document.getElementById('network-name').textContent = defaultNetwork;
+                networkBadgeSpan().textContent = defaultNetwork;
+                
+                console.log('⚠️ Usando valores por defecto para la red');
+            }
+        }
+
+        // Obtener información detallada de la red
+        async function getNetworkInfo() {
+            if (!isConnected) {
+                showAlert('❌ Conecta la wallet primero', 'danger');
+                return;
+            }
+
+            try {
+                console.log('🌐 Obteniendo información detallada de la red...');
+                
+                // Usar getNetworkDetails() según la documentación oficial
+                const networkDetails = await window.freighter.getNetworkDetails();
+                console.log('🌐 getNetworkDetails() resultado:', networkDetails);
+                
+                if (networkDetails.error) {
+                    throw new Error(networkDetails.error);
+                }
+
+                const info = `
+                    Red: ${networkDetails.network}
+                    URL: ${networkDetails.networkUrl}
+                    Passphrase: ${networkDetails.networkPassphrase}
+                    ${networkDetails.sorobanRpcUrl ? 'Soroban RPC: ' + networkDetails.sorobanRpcUrl : ''}
+                `;
+                
+                console.log('✅ Información de red obtenida:', info);
+                showAlert('📡 Información de red:\n' + info, 'info');
+                
+            } catch (error) {
+                console.error('❌ Error obteniendo información de red:', error);
+                
+                // Usar valores por defecto en caso de error
+                let info = `Red: Testnet (por defecto)\n`;
+                info += `Passphrase: ${CONFIG.networkPassphrase}\n`;
+                info += `Soroban RPC: ${CONFIG.rpcUrl}`;
+                showAlert('📡 Información de red:\n' + info, 'info');
+            }
+        }
+
+        // Firmar mensaje de prueba usando la API oficial
+        async function signTestMessage() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet primero', 'danger');
+                return;
+            }
+
+            try {
+                console.log('✍️ Iniciando prueba de firma...');
+                
+                const message = 'Compra Colectiva - Mensaje de prueba desde la dApp';
+                console.log('📝 Mensaje a firmar:', message);
+                
+                // Usar signMessage() según la documentación oficial
+                // signMessage(message: string, opts: { address: string }) -> Promise<{ signedMessage: string | null; signerAddress: string; } & { error?: string; }>
+                const signResult = await window.freighter.signMessage(message, {
+                    address: userAddress
+                });
+                
+                console.log('✍️ signMessage() resultado:', signResult);
+                
+                if (signResult.error) {
+                    throw new Error(signResult.error);
+                }
+                
+                if (!signResult.signedMessage) {
+                    throw new Error('No se recibió un mensaje firmado');
+                }
+
+                console.log('✅ Mensaje firmado exitosamente');
+                console.log('🔐 Mensaje firmado:', signResult.signedMessage);
+                console.log('👤 Firmado por:', signResult.signerAddress);
+                
+                showAlert('✅ Mensaje firmado correctamente', 'success');
+                
+            } catch (error) {
+                console.error('❌ Error firmando mensaje:', error);
+                showAlert('❌ Error firmando: ' + error.message, 'danger');
+            }
+        }
+
+        // Función para copiar la dirección al portapapeles
+        async function copyAddress() {
+            if (!userAddress) {
+                showAlert('❌ No hay dirección para copiar', 'danger');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(userAddress);
+                showAlert('✅ Dirección copiada al portapapeles', 'success');
+                
+                // Cambiar temporalmente el ícono del botón
+                const copyBtn = document.getElementById('copy-address-btn');
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '✅';
+                copyBtn.style.background = 'rgba(34, 197, 94, 0.3)';
+                
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error copiando dirección:', error);
+                showAlert('❌ Error al copiar la dirección', 'danger');
+            }
+        }
+
+        // Actualizar interfaz de usuario
+        function updateUI() {
+            const indicator = statusIndicator();
+            const connectButton = connectBtn();
+            const disconnectButton = disconnectBtn();
+            const walletInfoDiv = walletInfo();
+            const walletAddressPanelDiv = walletAddressPanel();
+            const userAddrSpan = userAddressSpan();
+            const connStatusSpan = connectionStatusSpan();
+
+            if (isConnected && userAddress) {
+                // Estado conectado - mostrar panel de dirección
+                indicator.textContent = '✅ Conectado';
+                indicator.className = 'status-indicator status-connected';
+                
+                connectButton.style.display = 'none';
+                disconnectButton.style.display = 'inline-block';
+                
+                // Mostrar panel de dirección y ocultar panel básico
+                walletAddressPanelDiv.style.display = 'block';
+                walletInfoDiv.style.display = 'none';
+                
+                // Actualizar panel de dirección
+                if (userAddress && typeof userAddress === 'string') {
+                    fullAddressSpan().textContent = userAddress;
+                    shortAddressSpan().textContent = `${userAddress.slice(0, 8)}...${userAddress.slice(-8)}`;
+                } else {
+                    fullAddressSpan().textContent = 'No disponible';
+                    shortAddressSpan().textContent = 'No disponible';
+                }
+                connectionTextSpan().textContent = 'Conectado';
+                
+                // Actualizar panel básico (por compatibilidad)
+                userAddrSpan.textContent = (userAddress && typeof userAddress === 'string') ? `${userAddress.slice(0, 8)}...${userAddress.slice(-8)}` : 'No disponible';
+                connStatusSpan.textContent = 'Conectado';
+                
+                enableActionButtons();
+                
+            } else if (isFreighterAvailable) {
+                // Freighter disponible pero no conectado
+                indicator.textContent = '❌ Desconectado';
+                indicator.className = 'status-indicator status-disconnected';
+                
+                connectButton.style.display = 'inline-block';
+                connectButton.disabled = false;
+                disconnectButton.style.display = 'none';
+                
+                // Ocultar ambos paneles
+                walletAddressPanelDiv.style.display = 'none';
+                walletInfoDiv.style.display = 'none';
+                userAddrSpan.textContent = 'No disponible';
+                connStatusSpan.textContent = 'Desconectado';
+                
+                disableActionButtons();
+                
+            } else {
+                // Freighter no disponible
+                indicator.textContent = '❌ Freighter no disponible';
+                indicator.className = 'status-indicator status-disconnected';
+                
+                connectButton.style.display = 'inline-block';
+                connectButton.disabled = true;
+                connectButton.textContent = 'Instalar Freighter';
+                disconnectButton.style.display = 'none';
+                
+                // Ocultar ambos paneles
+                walletAddressPanelDiv.style.display = 'none';
+                walletInfoDiv.style.display = 'none';
+                userAddrSpan.textContent = 'No disponible';
+                connStatusSpan.textContent = 'No disponible';
+                
+                disableActionButtons();
+            }
+        }
+
+        // Habilitar botones de acción
+        function enableActionButtons() {
+            const buttons = ['init-btn', 'create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'get-pool-btn', 'load-pools-btn'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = false;
+            });
+        }
+
+        // Deshabilitar botones de acción
+        function disableActionButtons() {
+            const buttons = ['init-btn', 'create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'get-pool-btn', 'load-pools-btn'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = true;
+            });
+        }
+
+        // Función para enviar logs al servidor
+        async function sendLogToServer(level, message, data = null, operation = null) {
+            try {
+                await fetch('/api/log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        level,
+                        message,
+                        data,
+                        operation
+                    })
+                });
+            } catch (error) {
+                console.warn('No se pudo enviar log al servidor:', error);
+            }
+        }
+
+        // Función para enviar logs de transacciones al servidor
+        async function sendTransactionLog(operation, details, status, error = null) {
+            try {
+                await fetch('/api/log-transaction', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        operation,
+                        details,
+                        status,
+                        error
+                    })
+                });
+            } catch (err) {
+                console.warn('No se pudo enviar log de transacción:', err);
+            }
+        }
+
+        // Función para enviar logs de errores al servidor
+        async function sendErrorLog(error, context, stack = null) {
+            try {
+                await fetch('/api/log-error', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        error: error.message || error,
+                        context,
+                        stack
+                    })
+                });
+            } catch (err) {
+                console.warn('No se pudo enviar log de error:', err);
+            }
+        }
+
+        // Mostrar alertas
+        function showAlert(message, type = 'info') {
+            const alertsDiv = document.getElementById('alerts');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.style.whiteSpace = 'pre-line'; // Para mostrar saltos de línea
+            alertDiv.textContent = message;
+            alertsDiv.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 8000);
+        }
+
+        // === FUNCIONES DE POOL (STUBS) ===
+
+        // Generar dirección de prueba para testing
+        function generateTestAddress() {
+            // Dirección de prueba válida para Stellar testnet
+            const testAddress = 'GABC1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890';
+            document.getElementById('supplier').value = testAddress;
+            showAlert('✅ Dirección de prueba insertada: ' + testAddress, 'info');
+        }
+
+        // Verificar conectividad con el contrato
+        async function verifyContractConnection() {
+            try {
+                console.log('🔍 Verificando conectividad con el contrato...');
+                const account = await server.getAccount(userAddress);
+                
+                // Intentar una consulta simple al contrato
+                const testTransaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(
+                    StellarSdk.Operation.invokeContractFunction({
+                        contract: CONFIG.contractId,
+                        function: 'get_pool_count', // Función que debería existir
+                        args: []
+                    })
+                )
+                .setTimeout(30)
+                .build();
+
+                // Solo simular la transacción, no enviarla
+                const simulation = await server.simulateTransaction(testTransaction);
+                console.log('✅ Contrato accesible:', simulation);
+                return simulation; // Return the full simulation result
+            } catch (error) {
+                console.warn('⚠️ No se pudo verificar el contrato:', error.message);
+                return { error: error.message }; // Return error object
+            }
+        }
+
+        // Inicializar el contrato si es necesario
+        async function initializeContract() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet para inicializar el contrato', 'danger');
+                return;
+            }
+
+            try {
+                console.log('🔧 Verificando estado del contrato...');
+                
+                // Verificar si ya está inicializado llamando a get_pool_count
+                const simulation = await verifyContractConnection();
+                
+                // Check if simulation has error with MissingValue
+                let needsInitialization = false;
+                if (simulation.error && simulation.error.includes('MissingValue')) {
+                    needsInitialization = true;
+                    console.log('🔧 Contrato no inicializado (MissingValue detectado)');
+                } else if (simulation.error) {
+                    console.log('⚠️ Error en simulación, pero no MissingValue:', simulation.error);
+                    // Assume it might be initialized or other error
+                    showAlert('⚠️ No se puede determinar el estado del contrato', 'warning');
+                    return;
+                } else {
+                    console.log('✅ El contrato ya está inicializado (get_pool_count simulado exitosamente)');
+                    showAlert('✅ El contrato ya está inicializado', 'info');
+                    return;
+                }
+                
+                if (!needsInitialization) {
+                    return;
+                }
+                
+                console.log('🔧 Inicializando contrato...');
+                
+                let account;
+                try {
+                    account = await server.getAccount(userAddress);
+                } catch (accountError) {
+                    console.error('❌ Error obteniendo cuenta:', accountError);
+                    throw new Error('No se pudo obtener información de la cuenta.');
+                }
+                
+                const transaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: StellarSdk.Networks.TESTNET,
+                })
+                .addOperation(
+                    StellarSdk.Operation.invokeContractFunction({
+                        contract: CONFIG.contractId,
+                        function: 'initialize',
+                        args: []
+                    })
+                )
+                .setTimeout(60)
+                .build();
+
+                console.log('✍️ Firmando transacción de inicialización...');
+                
+                const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
+                    networkPassphrase: 'Test SDF Network ; September 2015',
+                    address: userAddress
+                });
+
+                if (signedTransaction.error) {
+                    console.error('❌ Error de Freighter:', signedTransaction.error);
+                    throw new Error('Error firmando transacción: ' + signedTransaction.error);
+                }
+
+                console.log('📤 Enviando transacción de inicialización...');
+                
+                const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    signedTransaction.signedTxXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                const response = await server.sendTransaction(transactionToSubmit);
+                console.log('📊 Respuesta completa:', response);
+                console.log('📊 Status:', response.status);
+
+                if (response.status === 'SUCCESS') {
+                    showAlert('✅ Contrato inicializado exitosamente!', 'success');
+                } else {
+                    console.log('❌ Error details:', JSON.stringify(response.errorResult));
+                    if (response.errorResult && response.errorResult.result && response.errorResult.result._switch && response.errorResult.result._switch.name === 'txFailed') {
+                        // Check for specific panic message "Already initialized"
+                        const diagnosticEvents = response.errorResult.result.diagnosticEvents || [];
+                        const alreadyInitialized = diagnosticEvents.some(event => event.message && event.message.includes('Already initialized'));
+                        if (alreadyInitialized) {
+                            showAlert('✅ El contrato ya está inicializado', 'info');
+                        } else {
+                            showAlert('⚠️ Error interno en el contrato', 'warning');
+                        }
+                    } else {
+                        throw new Error('La transacción falló: ' + response.status + ' - ' + JSON.stringify(response.errorResult));
+                    }
+                }
+
+            } catch (error) {
+                console.error('❌ Error inicializando contrato:', error.message);
+                showAlert('❌ Error inicializando contrato: ' + error.message, 'danger');
+            }
+        }
+
+        // Crear un nuevo pool de compra colectiva
+        async function createPool() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet para crear un pool', 'danger');
+                return;
+            }
+
+            try {
+                // Verificar conectividad con el contrato primero
+                showAlert('🔍 Verificando conectividad con el contrato...', 'info');
+                const contractAccessible = await verifyContractConnection();
+                if (!contractAccessible) {
+                    showAlert('⚠️ No se pudo conectar con el contrato. Verifica la configuración.', 'danger');
+                    return;
+                }
+
+                // Obtener datos del formulario
+                const supplierAddress = document.getElementById('supplier').value.trim();
+                const goalXlm = parseInt(document.getElementById('goal').value);
+                const daysUntilExpiry = parseInt(document.getElementById('days').value);
+
+                // Debug: Log de la dirección obtenida
+                // Validación básica del proveedor
+
+                // Validaciones
+                if (!supplierAddress) {
+                    showAlert('❌ Ingresa la dirección del proveedor', 'danger');
+                    return;
+                }
+
+                if (!goalXlm || goalXlm <= 0) {
+                    showAlert('❌ La meta debe ser mayor a 0 XLM', 'danger');
+                    return;
+                }
+
+                if (!daysUntilExpiry || daysUntilExpiry <= 0) {
+                    showAlert('❌ Los días hasta vencimiento deben ser mayor a 0', 'danger');
+                    return;
+                }
+
+                // Convertir XLM a stroops (1 XLM = 10,000,000 stroops)
+                const goalStroops = BigInt(goalXlm * 10000000);
+                
+                // Calcular deadline (timestamp actual + días en segundos)
+                const now = Math.floor(Date.now() / 1000);
+                const deadline = now + (daysUntilExpiry * 24 * 60 * 60);
+                
+                // Validar longitud de la dirección (debe ser exactamente 56 caracteres)
+                if (supplierAddress.length !== 56) {
+                    showAlert(`❌ La dirección debe tener exactamente 56 caracteres. Tienes: ${supplierAddress.length}`, 'danger');
+                    return;
+                }
+
+                // Validar formato de la dirección
+                if (!supplierAddress.startsWith('G')) {
+                    showAlert('❌ La dirección debe empezar con "G"', 'danger');
+                    return;
+                }
+
+                // Validar que sea una dirección Stellar válida
+                if (!StellarSdk.StrKey.isValidEd25519PublicKey(supplierAddress)) {
+                    showAlert('❌ La dirección del proveedor no es válida. Debe ser una dirección Stellar válida', 'danger');
+                    return;
+                }
+                
+                // Verificar que la dirección sea diferente a la del usuario
+                if (supplierAddress === userAddress) {
+                    showAlert('❌ No puedes ser tu propio proveedor', 'danger');
+                    return;
+                }
+
+                console.log('🏗️ Creando pool...');
+                console.log('📍 Proveedor:', supplierAddress);
+                console.log('🎯 Meta:', goalXlm, 'XLM');
+                console.log('⏰ Deadline:', new Date(deadline * 1000).toLocaleString());
+
+                // Enviar log al servidor
+                await sendLogToServer('info', 'Iniciando creación de pool', {
+                    supplier: supplierAddress,
+                    goal: goalXlm,
+                    deadline: new Date(deadline * 1000).toISOString(),
+                    contractId: CONFIG.contractId,
+                    tokenId: CONFIG.tokenId
+                }, 'CREATE_POOL');
+
+                // Crear transacción para invocar el contrato
+                let account;
+                try {
+                    account = await server.getAccount(userAddress);
+                } catch (accountError) {
+                    console.error('❌ Error obteniendo cuenta:', accountError);
+                    throw new Error('No se pudo obtener información de la cuenta. Verifica que la wallet tenga fondos suficientes.');
+                }
+                
+                // Crear addresses necesarios
+                let creatorAddress = StellarSdk.Address.fromString(userAddress);
+                
+                let tokenAddress = StellarSdk.Address.fromString(CONFIG.tokenId);
+                let supplierAddressObj = StellarSdk.Address.fromString(supplierAddress);
+                
+                const goalScVal = StellarSdk.nativeToScVal(goalStroops, { type: 'i128' });
+                const deadlineScVal = StellarSdk.nativeToScVal(deadline, { type: 'u64' });
+                
+                // Convertir addresses a ScVal
+                const creatorScVal = StellarSdk.nativeToScVal(creatorAddress, { type: 'address' });
+                const tokenScVal = StellarSdk.nativeToScVal(tokenAddress, { type: 'address' });
+                const supplierScVal = StellarSdk.nativeToScVal(supplierAddressObj, { type: 'address' });
+                
+                console.log('📝 Argumentos preparados:');
+                console.log('  - Creator:', userAddress);
+                console.log('  - Token:', CONFIG.tokenId);
+                console.log('  - Supplier:', supplierAddress);
+                console.log('  - Goal:', goalXlm, 'XLM');
+                console.log('  - Deadline:', new Date(deadline * 1000).toLocaleString());
+                
+                console.log('🔨 Construyendo transacción...');
+                
+                const transaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: StellarSdk.Networks.TESTNET,  // Usar la constante de testnet
+                })
+                .addOperation(
+                    StellarSdk.Operation.invokeContractFunction({
+                        contract: CONFIG.contractId,
+                        function: 'create_pool',
+                        args: [
+                            creatorScVal,  // creator: Address
+                            tokenScVal,    // token: Address
+                            supplierScVal, // supplier: Address
+                            goalScVal,     // goal: i128
+                            deadlineScVal  // deadline: u64
+                        ]
+                    })
+                )
+                .setTimeout(60)
+                .build();
+
+                console.log('✅ Transacción construida exitosamente');
+
+                console.log('✍️ Firmando transacción...');
+                
+                await sendLogToServer('info', 'Firmando transacción con Freighter', null, 'CREATE_POOL');
+                
+                const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
+                    networkPassphrase: 'Test SDF Network ; September 2015',  // Solo passphrase
+                    address: userAddress
+                });
+
+                if (signedTransaction.error) {
+                    console.error('❌ Error de Freighter:', signedTransaction.error);
+                    await sendErrorLog(signedTransaction.error, 'Error firmando transacción', null);
+                    
+                    let errorMessage = 'Error firmando transacción';
+                    if (typeof signedTransaction.error === 'string') {
+                        errorMessage = signedTransaction.error;
+                    } else if (signedTransaction.error.message) {
+                        errorMessage = signedTransaction.error.message;
+                    } else {
+                        errorMessage = JSON.stringify(signedTransaction.error);
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+
+                console.log('📤 Enviando transacción...');
+                
+                const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    signedTransaction.signedTxXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                const response = await server.sendTransaction(transactionToSubmit);
+                console.log('📊 Respuesta:', response.status);
+
+                if (response.status === 'SUCCESS') {
+                    await sendTransactionLog('CREATE_POOL', {
+                        poolId: response.id,
+                        supplier: supplierAddress,
+                        goal: goalXlm,
+                        deadline: new Date(deadline * 1000).toISOString()
+                    }, 'success');
+                    
+                    showAlert(`✅ Pool creado exitosamente! ID: ${response.id}`, 'success');
+                    
+                    // Limpiar formulario
+                    document.getElementById('supplier').value = '';
+                    document.getElementById('goal').value = '100';
+                    document.getElementById('days').value = '30';
+                } else if (response.status === 'PENDING') {
+                    showAlert('⏳ Transacción pendiente. Verifica en el explorador de Stellar.', 'info');
+                } else {
+                    await sendTransactionLog('CREATE_POOL', {
+                        supplier: supplierAddress,
+                        goal: goalXlm,
+                        deadline: new Date(deadline * 1000).toISOString()
+                    }, 'error', response.status);
+                    
+                    // Mostrar error más específico
+                    let errorMessage = 'La transacción falló: ' + response.status;
+                    if (response.errorResult) {
+                        errorMessage += '\nDetalles: ' + JSON.stringify(response.errorResult);
+                    }
+                    throw new Error(errorMessage);
+                }
+
+            } catch (error) {
+                console.error('❌ Error creando pool:', error.message);
+                await sendErrorLog(error, 'Error en createPool', error.stack);
+                
+                let errorMessage = 'Error desconocido';
+                if (error.message) {
+                    errorMessage = error.message;
+                } else if (typeof error === 'string') {
+                    errorMessage = error;
+                } else {
+                    errorMessage = JSON.stringify(error);
+                }
+                
+                showAlert('❌ Error creando pool: ' + errorMessage, 'danger');
+            }
+        }
+
+        // Contribuir a un pool existente
+        async function contributeToPool() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet para contribuir', 'danger');
+                return;
+            }
+
+            try {
+                // Obtener datos del formulario
+                const poolId = parseInt(document.getElementById('contrib-pool-id').value);
+                const amountXlm = parseInt(document.getElementById('contrib-amount').value);
+
+                // Validaciones
+                if (!poolId || poolId <= 0) {
+                    showAlert('❌ Ingresa un ID de pool válido', 'danger');
+                    return;
+                }
+
+                if (!amountXlm || amountXlm <= 0) {
+                    showAlert('❌ La cantidad debe ser mayor a 0 XLM', 'danger');
+                    return;
+                }
+
+                // Convertir XLM a stroops
+                const amountStroops = BigInt(amountXlm * 10000000);
+
+                console.log('💰 Contribuyendo al pool...');
+                console.log('🆔 Pool ID:', poolId);
+                console.log('💵 Cantidad:', amountXlm, 'XLM');
+
+                // Primero necesitamos aprobar el contrato para gastar nuestros XLM
+                console.log('🔐 Aprobando contrato para gastar XLM...');
+                
+                const account = await server.getAccount(userAddress);
+                
+                // Crear transacción de approve
+                const approveTransaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(
+                    StellarSdk.Operation.invokeContractFunction({
+                        contract: CONFIG.tokenId, // Token XLM
+                        function: 'approve',
+                        args: [
+                            StellarSdk.Address.contract(CONFIG.contractId), // spender (nuestro contrato)
+                            StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }) // amount
+                        ]
+                    })
+                )
+                .setTimeout(60)
+                .build();
+
+                // Firmar y enviar approve
+                const signedApprove = await window.freighter.signTransaction(approveTransaction.toXDR(), {
+                    network: CONFIG.network,
+                    accountToSign: userAddress
+                });
+
+                if (signedApprove.error) {
+                    throw new Error('Error firmando approve: ' + signedApprove.error);
+                }
+
+                const approveToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    signedApprove.signedTxXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                const approveResponse = await server.sendTransaction(approveToSubmit);
+                console.log('✅ Approve enviado:', approveResponse);
+
+                if (approveResponse.status !== 'SUCCESS') {
+                    throw new Error('Approve falló: ' + approveResponse.status);
+                }
+
+                // Ahora crear la transacción de contribute
+                console.log('💸 Enviando contribución...');
+                
+                const contributeTransaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(
+                    StellarSdk.Operation.invokeContractFunction({
+                        contract: CONFIG.contractId,
+                        function: 'contribute',
+                        args: [
+                            StellarSdk.nativeToScVal(poolId, { type: 'u32' }), // pool_id
+                            StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }) // amount
+                        ]
+                    })
+                )
+                .setTimeout(60)
+                .build();
+
+                // Firmar y enviar contribute
+                const signedContribute = await window.freighter.signTransaction(contributeTransaction.toXDR(), {
+                    network: CONFIG.network,
+                    accountToSign: userAddress
+                });
+
+                if (signedContribute.error) {
+                    throw new Error('Error firmando contribute: ' + signedContribute.error);
+                }
+
+                const contributeToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    signedContribute.signedTxXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                const contributeResponse = await server.sendTransaction(contributeToSubmit);
+                console.log('✅ Contribución enviada:', contributeResponse);
+
+                if (contributeResponse.status === 'SUCCESS') {
+                    showAlert(`✅ Contribución exitosa! ${amountXlm} XLM al pool ${poolId}`, 'success');
+                    
+                    // Limpiar formulario
+                    document.getElementById('contrib-amount').value = '10';
+                } else {
+                    throw new Error('La contribución falló: ' + contributeResponse.status);
+                }
+
+            } catch (error) {
+                console.error('❌ Error contribuyendo:', error);
+                showAlert('❌ Error contribuyendo: ' + error.message, 'danger');
+            }
+        }
+
+        // Finalizar un pool (solo el creador)
+        async function finalizePool() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet para finalizar', 'danger');
+                return;
+            }
+
+            try {
+                const poolId = parseInt(document.getElementById('action-pool-id').value);
+
+                if (!poolId || poolId <= 0) {
+                    showAlert('❌ Ingresa un ID de pool válido', 'danger');
+                    return;
+                }
+
+                console.log('🏁 Finalizando pool...');
+                console.log('🆔 Pool ID:', poolId);
+
+                const account = await server.getAccount(userAddress);
+                const transaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(
+                    StellarSdk.Operation.invokeContractFunction({
+                        contract: CONFIG.contractId,
+                        function: 'finalize',
+                        args: [
+                            StellarSdk.nativeToScVal(poolId, { type: 'u32' }) // pool_id
+                        ]
+                    })
+                )
+                .setTimeout(60)
+                .build();
+
+                const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
+                    network: CONFIG.network,
+                    accountToSign: userAddress
+                });
+
+                if (signedTransaction.error) {
+                    throw new Error(signedTransaction.error);
+                }
+
+                const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    signedTransaction.signedTxXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                const response = await server.sendTransaction(transactionToSubmit);
+                console.log('✅ Pool finalizado:', response);
+
+                if (response.status === 'SUCCESS') {
+                    showAlert(`✅ Pool ${poolId} finalizado exitosamente!`, 'success');
+                } else {
+                    throw new Error('La finalización falló: ' + response.status);
+                }
+
+            } catch (error) {
+                console.error('❌ Error finalizando pool:', error);
+                showAlert('❌ Error finalizando pool: ' + error.message, 'danger');
+            }
+        }
+
+        // Solicitar reembolso de un pool fallido
+        async function requestRefund() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet para solicitar reembolso', 'danger');
+                return;
+            }
+
+            try {
+                const poolId = parseInt(document.getElementById('action-pool-id').value);
+
+                if (!poolId || poolId <= 0) {
+                    showAlert('❌ Ingresa un ID de pool válido', 'danger');
+                    return;
+                }
+
+                console.log('💰 Solicitando reembolso...');
+                console.log('🆔 Pool ID:', poolId);
+
+                const account = await server.getAccount(userAddress);
+                const transaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(
+                    StellarSdk.Operation.invokeContractFunction({
+                        contract: CONFIG.contractId,
+                        function: 'refund',
+                        args: [
+                            StellarSdk.nativeToScVal(poolId, { type: 'u32' }) // pool_id
+                        ]
+                    })
+                )
+                .setTimeout(60)
+                .build();
+
+                const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
+                    network: CONFIG.network,
+                    accountToSign: userAddress
+                });
+
+                if (signedTransaction.error) {
+                    throw new Error(signedTransaction.error);
+                }
+
+                const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    signedTransaction.signedTxXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                const response = await server.sendTransaction(transactionToSubmit);
+                console.log('✅ Reembolso solicitado:', response);
+
+                if (response.status === 'SUCCESS') {
+                    showAlert(`✅ Reembolso exitoso para el pool ${poolId}!`, 'success');
+                } else {
+                    throw new Error('El reembolso falló: ' + response.status);
+                }
+
+            } catch (error) {
+                console.error('❌ Error solicitando reembolso:', error);
+                showAlert('❌ Error solicitando reembolso: ' + error.message, 'danger');
+            }
+        }
+
+        // Consultar información de un pool
+        async function getPoolInfo() {
+            if (!isConnected) {
+                showAlert('❌ Conecta la wallet para ver información', 'danger');
+                return;
+            }
+
+            try {
+                const poolId = parseInt(document.getElementById('action-pool-id').value);
+
+                if (!poolId || poolId <= 0) {
+                    showAlert('❌ Ingresa un ID de pool válido', 'danger');
+                    return;
+                }
+
+                console.log('🔍 Consultando pool...');
+                console.log('🆔 Pool ID:', poolId);
+
+                const account = await server.getAccount(userAddress);
+                const transaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(
+                    StellarSdk.Operation.invokeContractFunction({
+                        contract: CONFIG.contractId,
+                        function: 'get_pool',
+                        args: [
+                            StellarSdk.nativeToScVal(poolId, { type: 'u32' }) // pool_id
+                        ]
+                    })
+                )
+                .setTimeout(60)
+                .build();
+
+                const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
+                    network: CONFIG.network,
+                    accountToSign: userAddress
+                });
+
+                if (signedTransaction.error) {
+                    throw new Error(signedTransaction.error);
+                }
+
+                const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    signedTransaction.signedTxXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                const response = await server.sendTransaction(transactionToSubmit);
+                console.log('✅ Pool consultado:', response);
+
+                if (response.status === 'SUCCESS') {
+                    // Parsear la respuesta del contrato
+                    const poolData = response.returnValue;
+                    console.log('📊 Datos del pool:', poolData);
+                    
+                    // Mostrar información del pool
+                    const info = `
+                        Pool ID: ${poolId}
+                        Estado: ${poolData.finalized ? 'Finalizado' : 'Activo'}
+                        Meta: ${Number(poolData.goal) / 10000000} XLM
+                        Recaudado: ${Number(poolData.raised) / 10000000} XLM
+                        Deadline: ${new Date(Number(poolData.deadline) * 1000).toLocaleString()}
+                    `;
+                    
+                    showAlert(`📊 Información del Pool:\n${info}`, 'info');
+                } else {
+                    throw new Error('La consulta falló: ' + response.status);
+                }
+
+            } catch (error) {
+                console.error('❌ Error consultando pool:', error);
+                showAlert('❌ Error consultando pool: ' + error.message, 'danger');
+            }
+        }
+
+        function loadActivePools() {
+            if (!isConnected) {
+                showAlert('❌ Conecta la wallet para cargar pools', 'danger');
+                return;
+            }
+            showAlert('🚧 Función cargar pools en desarrollo...', 'info');
+        }
+
+        // Inicializar cuando se carga la página
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
+                                

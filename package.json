@@ -1,0 +1,23 @@
+{
+  "name": "compra-colectiva-dapp",
+  "version": "1.0.0",
+  "description": "dApp de compra colectiva en Stellar",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@stellar/freighter-api": "^5.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "keywords": [
+    "stellar",
+    "dapp",
+    "blockchain",
+    "collective-purchase"
+  ],
+  "author": "Ideathon Team",
+  "license": "MIT"
+}
