@@ -261,6 +261,110 @@
             background: #fff3cd;
             color: #856404;
         }
+
+        /* Estilos para el panel de estado del proceso */
+        .process-status-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .process-status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .process-status-header h4 {
+            margin: 0;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .process-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .process-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .process-status-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .process-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .process-step.active {
+            background: rgba(255, 255, 255, 0.2);
+            opacity: 1;
+            transform: scale(1.02);
+        }
+
+        .process-step.completed {
+            background: rgba(34, 197, 94, 0.2);
+            opacity: 1;
+        }
+
+        .step-icon {
+            font-size: 1.2em;
+            min-width: 24px;
+        }
+
+        .step-text {
+            flex: 1;
+            font-size: 0.9em;
+        }
+
+        .process-hash {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .process-hash label {
+            display: block;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .process-hash code {
+            background: rgba(0, 0, 0, 0.3);
+            color: #fbbf24;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            word-break: break-all;
+        }
         
         
         .btn {
@@ -561,6 +665,43 @@
         <!-- Alertas -->
         <div id="alerts"></div>
 
+        <!-- Panel de Estado del Proceso -->
+        <div id="process-status-panel" class="process-status-panel" style="display: none;">
+            <div class="process-status-header">
+                <h4>🔄 Procesando Transacción</h4>
+                <div class="process-status-badge" id="process-status-badge">
+                    <span class="process-dot"></span>
+                    <span id="process-status-text">Iniciando...</span>
+                </div>
+            </div>
+            <div class="process-status-content">
+                <div class="process-step" id="process-step-1">
+                    <span class="step-icon">📝</span>
+                    <span class="step-text">Creando transacción...</span>
+                </div>
+                <div class="process-step" id="process-step-2">
+                    <span class="step-icon">✍️</span>
+                    <span class="step-text">Firmando con Freighter...</span>
+                </div>
+                <div class="process-step" id="process-step-3">
+                    <span class="step-icon">📤</span>
+                    <span class="step-text">Enviando a la red...</span>
+                </div>
+                <div class="process-step" id="process-step-4">
+                    <span class="step-icon">⏳</span>
+                    <span class="step-text">Esperando confirmación...</span>
+                </div>
+                <div class="process-step" id="process-step-5">
+                    <span class="step-icon">✅</span>
+                    <span class="step-text">Procesando resultado...</span>
+                </div>
+            </div>
+            <div class="process-hash" id="process-hash-display" style="display: none;">
+                <label>Hash de la transacción:</label>
+                <code id="process-hash-value">-</code>
+            </div>
+        </div>
+
         <!-- Grid principal -->
         <div class="grid">
             <!-- Crear Pool -->
@@ -621,6 +762,12 @@
                 <button class="btn" onclick="getPoolInfo()" id="get-pool-btn" disabled>
                     Ver Estado
                 </button>
+                <button class="btn" onclick="checkLastTransaction()" id="check-last-tx-btn" disabled>
+                    🔍 Verificar Última TX
+                </button>
+                <button class="btn" onclick="checkTransactionStatus()" id="check-tx-btn" disabled>
+                    🔍 Verificar TX por Hash
+                </button>
             </div>
         </div>
 
@@ -642,6 +789,7 @@
             tokenId: 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC',
             network: 'testnet',
             rpcUrl: 'https://soroban-testnet.stellar.org',
+            sorobanRpcUrl: 'https://soroban-testnet.stellar.org', // URL específica para RPC crudo
             // Passphrase correcta para testnet
             networkPassphrase: 'Test SDF Network ; September 2015'
         };
@@ -672,6 +820,9 @@
         async function init() {
             console.log('🚀 Inicializando dApp...');
             server = new StellarSdk.SorobanRpc.Server(CONFIG.rpcUrl);
+            
+            // Cargar hash de transacción desde localStorage
+            loadLastTransaction();
             
             // Esperar a que se carguen los scripts y verificar disponibilidad
             let retries = 0;
@@ -1156,7 +1307,7 @@
 
         // Habilitar botones de acción
         function enableActionButtons() {
-            const buttons = ['init-btn', 'create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'get-pool-btn', 'load-pools-btn'];
+            const buttons = ['init-btn', 'create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'get-pool-btn', 'load-pools-btn', 'check-last-tx-btn', 'check-tx-btn'];
             buttons.forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = false;
@@ -1165,7 +1316,7 @@
 
         // Deshabilitar botones de acción
         function disableActionButtons() {
-            const buttons = ['init-btn', 'create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'get-pool-btn', 'load-pools-btn'];
+            const buttons = ['init-btn', 'create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'get-pool-btn', 'load-pools-btn', 'check-last-tx-btn', 'check-tx-btn'];
             buttons.forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = true;
@@ -1530,6 +1681,11 @@
                 console.log('🎯 Meta:', goalXlm, 'XLM');
                 console.log('⏰ Deadline:', new Date(deadline * 1000).toLocaleString());
 
+                // Mostrar panel de proceso
+                showProcessPanel();
+                setProcessStep(1);
+                updateProcessStatus('Creando transacción...');
+
                 // Enviar log al servidor
                 await sendLogToServer('info', 'Iniciando creación de pool', {
                     supplier: supplierAddress,
@@ -1618,6 +1774,10 @@
 
                 console.log('✍️ Firmando transacción...');
                 
+                // Actualizar estado visual
+                setProcessStep(2);
+                updateProcessStatus('Firmando con Freighter...');
+                
                 await sendLogToServer('info', 'Firmando transacción con Freighter', null, 'CREATE_POOL');
                 
                 const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
@@ -1643,6 +1803,10 @@
 
                 console.log('📤 Enviando transacción...');
                 
+                // Actualizar estado visual
+                setProcessStep(3);
+                updateProcessStatus('Enviando a la red...');
+                
                 // 4) Enviar - usar fallback para ambas variantes de Freighter
                 const signedXdr = signedTransaction.signedTxXdr ?? signedTransaction.signedXDR;
                 if (!signedXdr) {
@@ -1659,6 +1823,10 @@
                 console.log('📊 Status:', response.status);
 
                 if (response.status === 'SUCCESS') {
+                    // Actualizar estado visual
+                    setProcessStep(5);
+                    updateProcessStatus('Procesando resultado...', false);
+                    
                     await sendTransactionLog('CREATE_POOL', {
                         poolId: response.id,
                         supplier: supplierAddress,
@@ -1668,12 +1836,64 @@
                     
                     showAlert(`✅ Pool creado exitosamente! ID: ${response.id}`, 'success');
                     
-                    // Limpiar formulario
+                    // Cargar información del pool recién creado
+                    const poolId = response.id || await getPoolIdFromTx(response.hash);
+                    if (poolId) {
+                        await getPoolInfo(poolId);
+                    }
+                    
+                    // Limpiar formulario y ocultar panel
                     document.getElementById('supplier').value = '';
                     document.getElementById('goal').value = '100';
                     document.getElementById('days').value = '30';
+                    hideProcessPanel();
+                    
                 } else if (response.status === 'PENDING') {
-                    showAlert('⏳ Transacción pendiente. Verifica en el explorador de Stellar.', 'info');
+                    // Actualizar estado visual
+                    setProcessStep(4);
+                    updateProcessStatus('Esperando confirmación...');
+                    showProcessHash(response.hash);
+                    
+                    // Almacenar hash para verificación posterior
+                    storeLastTransaction(response.hash);
+                    showAlert(`⏳ Transacción pendiente\nHash: ${response.hash}\nEsperando confirmación...`, 'info');
+
+                    try {
+                        // Usar watcher automático
+                        const final = await waitForTx(response.hash);
+                        if (final.status === 'SUCCESS') {
+                            // Actualizar estado visual
+                            setProcessStep(5);
+                            updateProcessStatus('¡Pool confirmado!', false);
+                            
+                            showAlert('✅ ¡Pool confirmado on-chain!', 'success');
+                            
+                            // Extraer poolId y cargar información
+                            const poolId = await getPoolIdFromTx(response.hash);
+                            
+                            if (poolId) {
+                                await getPoolInfo(poolId);
+                                // Limpiar formulario y ocultar panel
+                                document.getElementById('supplier').value = '';
+                                document.getElementById('goal').value = '100';
+                                document.getElementById('days').value = '30';
+                                setTimeout(() => hideProcessPanel(), 2000);
+                            } else {
+                                showAlert('⚠️ Pool creado pero no se pudo obtener el ID', 'warning');
+                                hideProcessPanel();
+                            }
+                        } else {
+                            updateProcessStatus('Transacción falló', false);
+                            showAlert('❌ La transacción falló', 'danger');
+                            console.error('Detalles del error:', final);
+                            setTimeout(() => hideProcessPanel(), 3000);
+                        }
+                    } catch (e) {
+                        updateProcessStatus('Expiró la espera', false);
+                        showAlert('⌛ Expiró la espera de confirmación', 'warning');
+                        console.error('Error en watcher:', e);
+                        setTimeout(() => hideProcessPanel(), 3000);
+                    }
                 } else {
                     await sendTransactionLog('CREATE_POOL', {
                         supplier: supplierAddress,
@@ -1705,6 +1925,10 @@
             } catch (error) {
                 console.error('❌ Error creando pool:', error.message);
                 await sendErrorLog(error, 'Error en createPool', error.stack);
+                
+                // Ocultar panel de proceso en caso de error
+                updateProcessStatus('Error en el proceso', false);
+                setTimeout(() => hideProcessPanel(), 3000);
                 
                 let errorMessage = 'Error desconocido';
                 if (error.message) {
@@ -2051,22 +2275,24 @@
             }
         }
 
-        // Consultar información de un pool
-        async function getPoolInfo() {
+        // Consultar información de un pool (read-only, sin firmar)
+        async function getPoolInfo(poolId = null) {
             if (!isConnected) {
                 showAlert('❌ Conecta la wallet para ver información', 'danger');
                 return;
             }
 
             try {
-                const poolId = parseInt(document.getElementById('action-pool-id').value);
-
-                if (!poolId || poolId <= 0) {
-                    showAlert('❌ Ingresa un ID de pool válido', 'danger');
-                    return;
+                // Si no se pasa poolId, obtenerlo del formulario
+                if (!poolId) {
+                    poolId = parseInt(document.getElementById('action-pool-id').value);
+                    if (!poolId || poolId <= 0) {
+                        showAlert('❌ Ingresa un ID de pool válido', 'danger');
+                        return;
+                    }
                 }
 
-                console.log('🔍 Consultando pool...');
+                console.log('🔍 Consultando pool (read-only)...');
                 console.log('🆔 Pool ID:', poolId);
 
                 const account = await server.getAccount(userAddress);
@@ -2089,66 +2315,166 @@
                 .setTimeout(600) // 10 minutos para dar tiempo a Freighter
                 .build();
 
-                // 3) Simular y preparar
+                // 3) Solo simular (read-only)
                 console.log('🔍 Simulando consulta de pool...');
                 const simulation = await server.simulateTransaction(transaction);
                 if (simulation.error) {
                     throw new Error('Error en simulación: ' + simulation.error);
                 }
 
-                console.log('🔧 Preparando consulta...');
-                transaction = await server.prepareTransaction(transaction);
-
-                // 4) Firmar y enviar
-                const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
-                    networkPassphrase: CONFIG.networkPassphrase,
-                    address: userAddress  // unifica: usa 'address' para ser consistente
-                });
-
-                if (signedTransaction.error) {
-                    throw new Error(signedTransaction.error);
+                // Decodificar el returnValue (ScVal -> JS)
+                const scv = simulation.result?.retval ?? simulation.result?.returnValue ?? simulation.returnValue;
+                if (!scv) {
+                    throw new Error('Sin returnValue en la simulación');
                 }
 
-                const signedXdr = signedTransaction.signedTxXdr ?? signedTransaction.signedXDR;
-                if (!signedXdr) {
-                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
-                }
+                const pool = StellarSdk.scValToNative(scv);
+                console.log('📊 Datos del pool (decodificado):', pool);
 
-                const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
-                    signedXdr,
-                    CONFIG.networkPassphrase
-                );
+                // Calcular estado del pool
+                const now = Math.floor(Date.now() / 1000);
+                const expired = now > pool.deadline;
+                const funded = BigInt(pool.raised) >= BigInt(pool.goal);
+                const status = pool.finalized ? 'finalized'
+                             : expired && !funded ? 'expired'
+                             : funded ? 'funded'
+                             : 'active';
 
-                const response = await server.sendTransaction(transactionToSubmit);
-                console.log('✅ Pool consultado:', response);
+                // Renderizar tarjeta del pool
+                renderPoolCard(poolId, pool, status);
 
-                if (response.status === 'SUCCESS') {
-                    // Decodificar la respuesta del contrato (es un ScVal)
-                    const poolDataScVal = response.returnValue;
-                    console.log('📊 Datos del pool (ScVal):', poolDataScVal);
-                    
-                    // Decodificar ScVal a objeto JavaScript
-                    const poolData = StellarSdk.scValToNative(poolDataScVal);
-                    console.log('📊 Datos del pool (decodificado):', poolData);
-                    
-                    // Mostrar información del pool
-                    const info = `
-                        Pool ID: ${poolId}
-                        Estado: ${poolData.finalized ? 'Finalizado' : 'Activo'}
-                        Meta: ${Number(poolData.goal) / 10000000} XLM
-                        Recaudado: ${Number(poolData.raised) / 10000000} XLM
-                        Deadline: ${new Date(Number(poolData.deadline) * 1000).toLocaleString()}
-                    `;
-                    
-                    showAlert(`📊 Información del Pool:\n${info}`, 'info');
-                } else {
-                    throw new Error('La consulta falló: ' + response.status);
-                }
+                return { pool, status };
 
             } catch (error) {
                 console.error('❌ Error consultando pool:', error);
                 showAlert('❌ Error consultando pool: ' + error.message, 'danger');
+                return null;
             }
+        }
+
+        // Renderizar tarjeta del pool en la UI
+        function renderPoolCard(poolId, pool, status) {
+            const poolsList = document.getElementById('pools-list');
+            
+            // Crear o actualizar tarjeta del pool
+            let poolCard = document.getElementById(`pool-${poolId}`);
+            if (!poolCard) {
+                poolCard = document.createElement('div');
+                poolCard.id = `pool-${poolId}`;
+                poolCard.className = 'pool-card';
+                poolsList.appendChild(poolCard);
+            }
+
+            // Calcular progreso
+            const progress = Number(pool.raised) / Number(pool.goal) * 100;
+            const goalXlm = Number(pool.goal) / 10000000;
+            const raisedXlm = Number(pool.raised) / 10000000;
+            const deadline = new Date(Number(pool.deadline) * 1000);
+
+            // Mapear estados a clases CSS
+            const statusClass = {
+                'active': 'status-active',
+                'funded': 'status-funded', 
+                'finalized': 'status-funded',
+                'expired': 'status-expired'
+            }[status] || 'status-active';
+
+            const statusText = {
+                'active': 'Activo',
+                'funded': 'Financiado',
+                'finalized': 'Finalizado',
+                'expired': 'Expirado'
+            }[status] || 'Activo';
+
+            poolCard.innerHTML = `
+                <div class="pool-header">
+                    <span class="pool-id">Pool #${poolId}</span>
+                    <span class="pool-status ${statusClass}">${statusText}</span>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.min(progress, 100)}%"></div>
+                </div>
+                
+                <div class="pool-info">
+                    <div class="info-item">
+                        <div class="info-label">Meta</div>
+                        <div class="info-value">${goalXlm} XLM</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Recaudado</div>
+                        <div class="info-value">${raisedXlm} XLM</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Progreso</div>
+                        <div class="info-value">${progress.toFixed(1)}%</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Deadline</div>
+                        <div class="info-value">${deadline.toLocaleDateString()}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Intenta extraer poolId desde el returnValue
+        async function getPoolIdFromReturnValue(hash) {
+            try {
+                const tx = await safeGetTransaction(hash);
+                if (tx.status !== 'SUCCESS') return null;
+
+                // posibles ubicaciones del retorno según SDK/RPC
+                const raw = tx.returnValue ?? tx.result?.retval ?? tx.result?.returnValue;
+                const scv = toScVal(raw);
+                if (!scv) return null;
+
+                const native = StellarSdk.scValToNative(scv);
+                const id = (native && typeof native === 'object' && 'id' in native) ? native.id : native;
+                const n = Number(id);
+                return Number.isFinite(n) ? n : null;
+            } catch (e) {
+                console.error('Error extrayendo poolId (returnValue):', e);
+                return null;
+            }
+        }
+
+        // --- Fallback: leer poolId desde eventos de la TX
+        async function getPoolIdFromEventsByTx(hash) {
+            try {
+                const tx = await safeGetTransaction(hash);
+                if (tx.status !== 'SUCCESS') return null;
+
+                const ev = await server.getEvents({
+                    startLedger: tx.ledger,
+                    filters: [{ type: 'contract', contractIds: [CONFIG.contractId] }],
+                });
+
+                const event = ev.events.find(e => e.txHash === hash);
+                if (!event) return null;
+
+                // value puede estar en varias formas según el endpoint
+                const raw = event?.value?.xdr || event?.value || event?.data?.xdr || event?.data;
+                const scv = toScVal(raw);
+                if (!scv) return null;
+
+                const native = StellarSdk.scValToNative(scv);
+                const id = (native && typeof native === 'object' && 'id' in native) ? native.id : native;
+                const n = Number(id);
+                return Number.isFinite(n) ? n : null;
+            } catch (e) {
+                console.error('Error extrayendo poolId (eventos):', e);
+                return null;
+            }
+        }
+
+        // --- Agregador: dame el poolId como sea
+        async function getPoolIdFromTx(hash) {
+            let id = await getPoolIdFromReturnValue(hash);
+            if (!id) id = await getPoolIdFromEventsByTx(hash);
+
+            // último recurso: si tu contrato guarda NextPoolId, puedes leerlo y restar 1
+            // id = id ?? await getLastPoolIdByCounter(); // (opcional)
+            return id;
         }
 
         function loadActivePools() {
@@ -2157,6 +2483,220 @@
                 return;
             }
             showAlert('🚧 Función cargar pools en desarrollo...', 'info');
+        }
+
+        // Verificar estado de transacción por hash
+        async function checkTransactionStatus() {
+            const hash = prompt('Ingresa el hash de la transacción:');
+            if (!hash) return;
+
+            try {
+                console.log('🔍 Verificando estado de transacción...');
+                console.log('📋 Hash:', hash);
+
+                const response = await server.getTransaction(hash);
+                console.log('📊 Estado de transacción:', response);
+
+                if (response.status === 'SUCCESS') {
+                    showAlert(`✅ Transacción exitosa!\nHash: ${hash}\nLedger: ${response.ledger}`, 'success');
+                } else if (response.status === 'PENDING') {
+                    showAlert(`⏳ Transacción pendiente\nHash: ${hash}\nÚltimo ledger: ${response.latestLedger}`, 'info');
+                } else if (response.status === 'ERROR') {
+                    showAlert(`❌ Transacción falló\nHash: ${hash}\nError: ${JSON.stringify(response.errorResult)}`, 'danger');
+                } else {
+                    showAlert(`ℹ️ Estado: ${response.status}\nHash: ${hash}`, 'info');
+                }
+
+            } catch (error) {
+                console.error('❌ Error verificando transacción:', error);
+                showAlert('❌ Error verificando transacción: ' + error.message, 'danger');
+            }
+        }
+
+        // Verificar estado de la última transacción (si está almacenada)
+        let lastTransactionHash = null;
+
+        // Guarda el hash para la UI y para reintentos tras refresh
+        function storeLastTransaction(hash) {
+            lastTransactionHash = hash;
+            localStorage.setItem('lastTxHash', hash);
+            console.log('💾 Hash almacenado:', hash);
+        }
+
+        // Cargar hash desde localStorage al inicializar
+        function loadLastTransaction() {
+            const stored = localStorage.getItem('lastTxHash');
+            if (stored) {
+                lastTransactionHash = stored;
+                console.log('📂 Hash cargado desde localStorage:', stored);
+            }
+        }
+
+        // Funciones para manejar el estado visual del proceso
+        function showProcessPanel() {
+            const panel = document.getElementById('process-status-panel');
+            panel.style.display = 'block';
+            resetProcessSteps();
+        }
+
+        function hideProcessPanel() {
+            const panel = document.getElementById('process-status-panel');
+            panel.style.display = 'none';
+        }
+
+        function resetProcessSteps() {
+            for (let i = 1; i <= 5; i++) {
+                const step = document.getElementById(`process-step-${i}`);
+                step.classList.remove('active', 'completed');
+            }
+        }
+
+        function setProcessStep(stepNumber, status = 'active') {
+            // Completar pasos anteriores
+            for (let i = 1; i < stepNumber; i++) {
+                const step = document.getElementById(`process-step-${i}`);
+                step.classList.remove('active');
+                step.classList.add('completed');
+            }
+            
+            // Activar paso actual
+            const currentStep = document.getElementById(`process-step-${stepNumber}`);
+            currentStep.classList.remove('completed');
+            currentStep.classList.add(status);
+        }
+
+        function updateProcessStatus(text, isActive = true) {
+            const statusText = document.getElementById('process-status-text');
+            const statusBadge = document.getElementById('process-status-badge');
+            
+            statusText.textContent = text;
+            
+            if (isActive) {
+                statusBadge.style.background = 'rgba(255, 255, 255, 0.2)';
+            } else {
+                statusBadge.style.background = 'rgba(34, 197, 94, 0.2)';
+            }
+        }
+
+        function showProcessHash(hash) {
+            const hashDisplay = document.getElementById('process-hash-display');
+            const hashValue = document.getElementById('process-hash-value');
+            
+            hashValue.textContent = hash;
+            hashDisplay.style.display = 'block';
+        }
+
+        function hideProcessHash() {
+            const hashDisplay = document.getElementById('process-hash-display');
+            hashDisplay.style.display = 'none';
+        }
+
+        // --- Helper: llamada cruda al RPC (asegura usar "hash")
+        async function rawGetTransactionStatus(rpcUrl, hash) {
+            const h = String(hash).trim();
+            if (h.length !== 64) throw new Error(`hash inválido (${h.length} chars)`);
+            const body = { jsonrpc: "2.0", id: 1, method: "getTransaction", params: { hash: h } };
+            const r = await fetch(rpcUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+            const j = await r.json();
+            if (j?.error) throw new Error(j.error.message || "RPC error");
+            return {
+                status: j?.result?.status ?? "NOT_FOUND",
+                ledger: j?.result?.ledger,
+                latestLedger: j?.result?.latestLedger,
+                latestLedgerCloseTime: j?.result?.latestLedgerCloseTime,
+                returnValue: j?.result?.returnValue // algunos RPC lo incluyen
+            };
+        }
+
+        // --- Helper: intenta SDK y si falla usa RPC crudo
+        async function safeGetTransaction(hash) {
+            try { 
+                return await server.getTransaction(hash); 
+            } catch (e) { 
+                console.warn('getTransaction SDK falló, usando RPC crudo:', e?.message || e);
+                return await rawGetTransactionStatus(CONFIG.sorobanRpcUrl, hash);
+            }
+        }
+
+        // --- Helper: normaliza un ScVal venga como venga
+        function toScVal(scvLike) {
+            if (!scvLike) return null;
+            try {
+                if (scvLike instanceof StellarSdk.xdr.ScVal) return scvLike;
+                if (typeof scvLike === 'string') return StellarSdk.xdr.ScVal.fromXDR(scvLike, 'base64');
+                if (typeof scvLike === 'object' && typeof scvLike.xdr === 'string')
+                    return StellarSdk.xdr.ScVal.fromXDR(scvLike.xdr, 'base64');
+            } catch (e) {
+                console.warn('toScVal: no se pudo convertir', e);
+            }
+            return null;
+        }
+
+        // Poll de estado de transacción (Soroban RPC) - Versión robusta con fallback
+        async function waitForTx(hash, { intervalMs = 2500, maxMs = 180000 } = {}) {
+            const start = Date.now();
+            console.log(`🔄 Iniciando watcher para hash: ${hash}`);
+            
+            while (true) {
+                try {
+                    let res;
+                    try {
+                        // 1) Intento normal con el SDK
+                        res = await server.getTransaction(hash);
+                    } catch (sdkErr) {
+                        console.warn('⚠️ getTransaction (SDK) falló, usando RPC crudo:', sdkErr?.message || sdkErr);
+                        // 2) Fallback "crudo" sin decodificar XDR
+                        res = await rawGetTransactionStatus(CONFIG.sorobanRpcUrl, hash);
+                    }
+
+                    console.log(`📊 Estado actual: ${res.status}`);
+
+                    // NOT_FOUND | PENDING | SUCCESS | FAILED
+                    if (res.status === 'SUCCESS' || res.status === 'FAILED') {
+                        console.log(`✅ Watcher completado: ${res.status}`);
+                        return res;
+                    }
+
+                    if (Date.now() - start > maxMs) {
+                        throw new Error('Timeout esperando confirmación');
+                    }
+                    await new Promise(r => setTimeout(r, intervalMs));
+                } catch (error) {
+                    console.error('❌ Error en watcher:', error);
+                    if (Date.now() - start > maxMs) throw error;
+                    await new Promise(r => setTimeout(r, intervalMs));
+                }
+            }
+        }
+
+        async function checkLastTransaction() {
+            if (!lastTransactionHash) {
+                showAlert('❌ No hay transacción reciente para verificar', 'danger');
+                return;
+            }
+
+            try {
+                console.log('🔍 Verificando última transacción...');
+                console.log('📋 Hash:', lastTransactionHash);
+
+                const response = await safeGetTransaction(lastTransactionHash);
+
+                console.log('📊 Estado de transacción:', response);
+
+                if (response.status === 'SUCCESS') {
+                    showAlert(`✅ ¡Transacción exitosa!\nHash: ${lastTransactionHash}\nLedger: ${response.ledger}`, 'success');
+                } else if (response.status === 'PENDING') {
+                    showAlert(`⏳ Transacción pendiente\nHash: ${lastTransactionHash}\nÚltimo ledger: ${response.latestLedger}`, 'info');
+                } else if (response.status === 'ERROR') {
+                    showAlert(`❌ Transacción falló\nHash: ${lastTransactionHash}\nError: ${JSON.stringify(response.errorResult)}`, 'danger');
+                } else {
+                    showAlert(`ℹ️ Estado: ${response.status}\nHash: ${lastTransactionHash}`, 'info');
+                }
+
+            } catch (error) {
+                console.error('❌ Error verificando transacción:', error);
+                showAlert('❌ Error verificando transacción: ' + error.message, 'danger');
+            }
         }
 
         // Inicializar cuando se carga la página
