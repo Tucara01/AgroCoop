@@ -1233,6 +1233,21 @@ function refreshContribDropdownFromCache() {
     sel.disabled = size === 0;
 }
 
+// Máximo seguro para setTimeout (2^31-1 ms) con margen
+const MAX_TIMEOUT_MS = 2_147_000_000;
+
+// Espera en tramos hasta completar "ms"
+// onDone se ejecuta al final
+function waitLong(ms, onDone) {
+  if (ms <= MAX_TIMEOUT_MS) {
+    return setTimeout(onDone, ms);
+  }
+  // programa un tramo y recursivo
+  return setTimeout(() => {
+    waitLong(ms - MAX_TIMEOUT_MS, onDone);
+  }, MAX_TIMEOUT_MS);
+}
+
 // Programa un refresco automático al llegar el deadline
 function scheduleDeadlineWatcher(poolId, deadlineSec) {
     try {
@@ -1241,19 +1256,17 @@ function scheduleDeadlineWatcher(poolId, deadlineSec) {
         if (prev) clearTimeout(prev);
 
         const msUntilDeadline = (Number(deadlineSec) * 1000) - Date.now();
+        // si ya pasó, refrescar pronto
+        const delay = msUntilDeadline <= 0 ? 500 : (msUntilDeadline + 1500);
 
-        // Si ya pasó, refrescamos en breve para marcar Expirado
-        const delay = msUntilDeadline <= 0 ? 500 : (msUntilDeadline + 1500); 
-        // +1.5s de buffer para dar tiempo al cierre de ledger
-
-        const handle = setTimeout(async () => {
-            try { 
+        const handle = waitLong(delay, async () => {
+            try {
                 console.log(`🕐 Deadline alcanzado para pool #${poolId}, refrescando estado...`);
-                await getPoolInfo(poolId); 
+                await getPoolInfo(poolId);
             } catch (e) {
                 console.warn(`Error al refrescar pool #${poolId} tras deadline:`, e);
             }
-        }, delay);
+        });
 
         poolDeadlineTimers.set(poolId, handle);
         console.log(`⏰ Programado refresco para pool #${poolId} en ${Math.round(delay/1000)}s`);
