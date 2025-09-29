@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compra Colectiva - Stellar dApp</title>
+    <title>Agro Coop - Cooperativa Rural del Sur</title>
     <script src="https://unpkg.com/@stellar/stellar-sdk@12.1.0/dist/stellar-sdk.min.js"></script>
     <script type="module">
         // Importar Freighter API usando ES6 modules como indica la documentación oficial
@@ -26,64 +26,116 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c59 25%, #6b8e23 50%, #8fbc8f 75%, #98fb98 100%);
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
+            margin: 0;
         }
         
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 100%;
+            width: 100%;
+            margin: 0;
+            background: linear-gradient(145deg, #f5f5dc 0%, #f0e68c 100%);
+            border-radius: 0;
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.15),
+                inset 0 1px 0 rgba(255,255,255,0.3);
             padding: 30px;
+            border: none;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
         
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            border-bottom: 3px solid #8b4513;
+            background: linear-gradient(90deg, transparent 0%, rgba(139,69,19,0.1) 50%, transparent 100%);
+            position: relative;
+            max-width: 1800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .header::before {
+            content: "🌾";
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2em;
+            animation: sway 3s ease-in-out infinite;
+        }
+        
+        .header::after {
+            content: "🌾";
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2em;
+            animation: sway 3s ease-in-out infinite reverse;
+        }
+        
+        @keyframes sway {
+            0%, 100% { transform: translateY(-50%) rotate(-2deg); }
+            50% { transform: translateY(-50%) rotate(2deg); }
         }
         
         .header h1 {
-            color: #333;
-            font-size: 2.5em;
+            color: #2d5016;
+            font-size: 2.8em;
             margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: bold;
         }
         
         .header p {
-            color: #666;
-            font-size: 1.1em;
+            color: #4a7c59;
+            font-size: 1.2em;
+            font-style: italic;
         }
         
         .wallet-section {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
+            background: linear-gradient(145deg, #f0e68c 0%, #daa520 100%);
+            border-radius: 15px;
+            padding: 25px;
             margin-bottom: 30px;
             text-align: center;
+            border: 2px solid #8b4513;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 1800px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .wallet-info {
-            background: #e8f4f8;
-            border-radius: 8px;
+            background: linear-gradient(145deg, #f0e68c 0%, #daa520 100%);
+            border-radius: 12px;
             padding: 15px;
             margin: 15px 0;
             text-align: left;
-            border: 2px solid #bee5eb;
+            border: 2px solid #8b4513;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .wallet-info h4 {
             margin: 0 0 10px 0;
-            color: #0c5460;
+            color: #2d5016;
+            font-weight: bold;
         }
 
         .wallet-info p {
             margin: 5px 0;
-            color: #495057;
+            color: #4a7c59;
+            font-weight: 500;
         }
 
         .wallet-actions {
@@ -96,11 +148,12 @@
 
         /* Estilos para el panel de dirección de wallet */
         .wallet-address-panel {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px;
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c59 100%);
+            border-radius: 15px;
             padding: 20px;
             margin: 15px 0;
-            color: white;
+            color: #f5f5dc;
+            border: 2px solid #8b4513;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
             border: 2px solid rgba(255, 255, 255, 0.1);
         }
@@ -368,20 +421,24 @@
         
         
         .btn {
-            background: #667eea;
-            color: white;
-            border: none;
+            background: linear-gradient(145deg, #8b4513 0%, #a0522d 100%);
+            color: #f5f5dc;
+            border: 2px solid #654321;
             padding: 12px 24px;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 16px;
+            font-weight: bold;
             transition: all 0.3s ease;
             margin: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
         
         .btn:hover {
-            background: #5a6fd8;
+            background: linear-gradient(145deg, #a0522d 0%, #8b4513 100%);
             transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
         
         .btn:disabled {
@@ -407,16 +464,25 @@
         }
         
         .section {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
+            background: linear-gradient(145deg, #f0e68c 0%, #daa520 100%);
+            border-radius: 15px;
+            padding: 25px;
             margin-bottom: 20px;
+            border: 2px solid #8b4513;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .section.full-width {
+            max-width: 1800px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .section h3 {
-            color: #333;
+            color: #2d5016;
             margin-bottom: 15px;
-            font-size: 1.4em;
+            font-size: 1.5em;
+            font-weight: bold;
         }
         
         .form-group {
@@ -427,27 +493,30 @@
             display: block;
             margin-bottom: 5px;
             font-weight: 600;
-            color: #555;
+            color: #2d5016;
         }
         
         .form-group input, .form-group select {
             width: 100%;
             padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
+            border: 2px solid #8b4513;
+            border-radius: 8px;
+            background: #f5f5dc;
             font-size: 16px;
             transition: border-color 0.3s ease;
         }
         
         .form-group input:focus, .form-group select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #8b4513;
+            box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.2);
+            background: #fff8dc;
         }
         
         .pool-card {
-            background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
+            background: linear-gradient(145deg, #f5f5dc 0%, #f0e68c 100%);
+            border: 2px solid #8b4513;
+            border-radius: 15px;
             padding: 20px;
             margin-bottom: 15px;
             transition: all 0.3s ease;
@@ -571,8 +640,24 @@
         
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 1400px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 25px;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
         }
         
         @media (max-width: 768px) {
@@ -593,19 +678,19 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🛒 Compra Colectiva</h1>
-            <p>Plataforma descentralizada para compras grupales en Stellar</p>
+            <h1>🌾 Agro Coop del Sur</h1>
+            <p>Cooperativa rural para compras colectivas de insumos agrícolas y leña</p>
         </div>
 
         <!-- Sección de Wallet -->
         <div class="wallet-section">
-            <h3>🔗 Conexión de Wallet</h3>
+            <h3>🔗 Billetera Digital</h3>
             <div id="wallet-status">
                 <span id="status-indicator" class="status-indicator status-loading">🔄 Verificando Freighter...</span>
                 <br><br>
-                <button class="btn" id="connect-btn" onclick="connectWallet()">Conectar Freighter</button>
-                <button class="btn btn-danger" id="disconnect-btn" onclick="disconnectWallet()" style="display: none;">Desconectar</button>
-                <button class="btn" id="retry-btn" onclick="retryFreighterDetection()" style="display: none;">🔄 Reintentar Detección</button>
+                <button class="btn" id="connect-btn" onclick="connectWallet()">🌾 Conectar Billetera</button>
+                <button class="btn btn-danger" id="disconnect-btn" onclick="disconnectWallet()" style="display: none;">🚪 Desconectar</button>
+                <button class="btn" id="retry-btn" onclick="retryFreighterDetection()" style="display: none;">🔄 Reintentar Conexión</button>
             </div>
             
             <!-- Panel de Dirección de Wallet -->
@@ -706,67 +791,67 @@
         <div class="grid">
             <!-- Crear Pool -->
             <div class="section">
-                <h3>📝 Crear Pool</h3>
+                <h3>🌱 Crear Cooperativa</h3>
                 <div class="form-group">
-                    <label>Dirección del Proveedor:</label>
+                    <label>Dirección del Proveedor de Insumos:</label>
                     <input type="text" id="supplier" placeholder="GABC..." />
                 </div>
                 <div class="form-group">
-                    <label>Meta (XLM):</label>
+                    <label>Meta de Recaudación (XLM):</label>
                     <input type="number" id="goal" placeholder="100" min="1" />
                 </div>
                 <div class="form-group">
-                    <label>Días hasta vencimiento:</label>
+                    <label>Días hasta vencimiento del plazo:</label>
                     <input type="number" id="days" placeholder="30" min="1" />
                 </div>
                 <button class="btn btn-warning me-2" onclick="initializeContract()" id="init-btn" disabled>
                     🔧 Inicializar Contrato
                 </button>
                 <button class="btn btn-success" onclick="createPool()" id="create-btn" disabled>
-                    Crear Pool
+                    🌱 Crear Cooperativa
                 </button>
             </div>
 
             <!-- Contribuir -->
             <div class="section">
-                <h3>💰 Contribuir</h3>
+                <h3>🌾 Aportar a Cooperativa</h3>
                 <div class="form-group">
-                    <label>ID del Pool:</label>
+                    <label>ID de la Cooperativa:</label>
                     <input type="number" id="contrib-pool-id" placeholder="1" min="1" />
                 </div>
                 <div class="form-group">
-                    <label>Cantidad (XLM):</label>
+                    <label>Monto del Aporte (XLM):</label>
                     <input type="number" id="contrib-amount" placeholder="10" min="0.1" step="0.1" />
                 </div>
                 <button class="btn" onclick="contributeToPool()" id="contrib-btn" disabled>
-                    Aprobar y Contribuir
+                    🌾 Aprobar y Aportar
                 </button>
             </div>
 
             <!-- Acciones de Pool -->
             <div class="section">
-                <h3>⚡ Acciones</h3>
+                <h3>⚡ Gestionar Cooperativa</h3>
                 <div class="form-group">
-                    <label>ID del Pool:</label>
+                    <label>ID de la Cooperativa:</label>
                     <input type="number" id="action-pool-id" placeholder="1" min="1" />
                 </div>
                 <button class="btn btn-success" onclick="finalizePool()" id="finalize-btn" disabled>
-                    Finalizar Pool
+                    ✅ Finalizar Cooperativa
                 </button>
                 <button class="btn btn-danger" onclick="requestRefund()" id="refund-btn" disabled>
-                    Solicitar Reembolso
+                    💰 Solicitar Reembolso
                 </button>
                 <button class="btn" onclick="getPoolInfo()" id="get-pool-btn" disabled>
-                    Ver Estado
+                    📊 Ver Estado
                 </button>
             </div>
         </div>
 
         <!-- Lista de Pools -->
-        <div class="section">
-            <h3>📊 Pools Activos</h3>
+        <div class="section full-width">
+            <h3>📊 Cooperativas Activas</h3>
             <button class="btn" onclick="loadActivePools()" id="load-pools-btn" disabled>
-                Cargar Pools
+                📊 Cargar Cooperativas
             </button>
             <div id="pools-list"></div>
         </div>
