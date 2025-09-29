@@ -1263,7 +1263,7 @@
                 console.log('🔍 Verificando conectividad con el contrato...');
                 const account = await server.getAccount(userAddress);
                 
-                // Intentar una consulta simple al contrato
+                // Intentar una consulta simple al contrato usando get_pool
                 const testTransaction = new StellarSdk.TransactionBuilder(account, {
                     fee: StellarSdk.BASE_FEE,
                     networkPassphrase: CONFIG.networkPassphrase,
@@ -1271,8 +1271,8 @@
                 .addOperation(
                     StellarSdk.Operation.invokeContractFunction({
                         contract: CONFIG.contractId,
-                        function: 'get_pool_count', // Función que debería existir
-                        args: []
+                        function: 'get_pool', // Función que existe
+                        args: [StellarSdk.nativeToScVal(1, { type: 'u32' })]
                     })
                 )
                 .setTimeout(30)
@@ -1288,6 +1288,46 @@
             }
         }
 
+        // Verificar si el contrato está inicializado
+        async function isContractInitialized() {
+            try {
+                console.log('🔍 Verificando si el contrato está inicializado...');
+                const account = await server.getAccount(userAddress);
+                
+                // Intentar simular una operación que requiere inicialización
+                // Usamos get_pool con ID 1 (que debería fallar si no está inicializado)
+                const testTransaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(
+                    StellarSdk.Operation.invokeContractFunction({
+                        contract: CONFIG.contractId,
+                        function: 'get_pool',
+                        args: [StellarSdk.nativeToScVal(1, { type: 'u32' })]
+                    })
+                )
+                .setTimeout(30)
+                .build();
+
+                const simulation = await server.simulateTransaction(testTransaction);
+                
+                // Si hay error con MissingValue, el contrato no está inicializado
+                if (simulation.error && simulation.error.includes('MissingValue')) {
+                    console.log('❌ Contrato NO inicializado (MissingValue detectado)');
+                    return false;
+                }
+                
+                // Si no hay error MissingValue, asumimos que está inicializado
+                console.log('✅ Contrato inicializado correctamente');
+                return true;
+                
+            } catch (error) {
+                console.warn('⚠️ Error verificando inicialización:', error.message);
+                return false;
+            }
+        }
+
         // Inicializar el contrato si es necesario
         async function initializeContract() {
             if (!isConnected || !userAddress) {
@@ -1299,15 +1339,15 @@
                 console.log('🔧 Verificando estado del contrato...');
                 
                 // Verificar si ya está inicializado llamando a get_pool_count
-                const simulation = await verifyContractConnection();
+                const contractCheck = await verifyContractConnection();
                 
-                // Check if simulation has error with MissingValue
+                // Check if contractCheck has error with MissingValue
                 let needsInitialization = false;
-                if (simulation.error && simulation.error.includes('MissingValue')) {
+                if (contractCheck.error && contractCheck.error.includes('MissingValue')) {
                     needsInitialization = true;
                     console.log('🔧 Contrato no inicializado (MissingValue detectado)');
-                } else if (simulation.error) {
-                    console.log('⚠️ Error en simulación, pero no MissingValue:', simulation.error);
+                } else if (contractCheck.error) {
+                    console.log('⚠️ Error en verificación, pero no MissingValue:', contractCheck.error);
                     // Assume it might be initialized or other error
                     showAlert('⚠️ No se puede determinar el estado del contrato', 'warning');
                     return;
@@ -1331,25 +1371,40 @@
                     throw new Error('No se pudo obtener información de la cuenta.');
                 }
                 
-                const transaction = new StellarSdk.TransactionBuilder(account, {
+                // 1) Construir operación
+                const operation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'initialize',
+                    args: []
+                });
+
+                // 2) Armar transacción base
+                let transaction = new StellarSdk.TransactionBuilder(account, {
                     fee: StellarSdk.BASE_FEE,
-                    networkPassphrase: StellarSdk.Networks.TESTNET,
+                    networkPassphrase: CONFIG.networkPassphrase,
                 })
-                .addOperation(
-                    StellarSdk.Operation.invokeContractFunction({
-                        contract: CONFIG.contractId,
-                        function: 'initialize',
-                        args: []
-                    })
-                )
-                .setTimeout(60)
+                .addOperation(operation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
                 .build();
+
+                // 3) Simular y preparar
+                console.log('🔍 Simulando transacción de inicialización...');
+                const simulation = await server.simulateTransaction(transaction);
+                console.log('📊 Simulación:', simulation);
+                
+                if (simulation.error) {
+                    throw new Error('Error en simulación: ' + simulation.error);
+                }
+
+                console.log('🔧 Preparando transacción...');
+                transaction = await server.prepareTransaction(transaction);
+                console.log('✅ Transacción preparada con footprint y autorización');
 
                 console.log('✍️ Firmando transacción de inicialización...');
                 
                 const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
-                    networkPassphrase: 'Test SDF Network ; September 2015',
-                    address: userAddress
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress  // unifica: usa 'address' para ser consistente
                 });
 
                 if (signedTransaction.error) {
@@ -1359,8 +1414,14 @@
 
                 console.log('📤 Enviando transacción de inicialización...');
                 
+                // 4) Enviar - usar fallback para ambas variantes de Freighter
+                const signedXdr = signedTransaction.signedTxXdr ?? signedTransaction.signedXDR;
+                if (!signedXdr) {
+                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
+                }
+                
                 const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
-                    signedTransaction.signedTxXdr,
+                    signedXdr,
                     CONFIG.networkPassphrase
                 );
 
@@ -1400,11 +1461,12 @@
             }
 
             try {
-                // Verificar conectividad con el contrato primero
-                showAlert('🔍 Verificando conectividad con el contrato...', 'info');
-                const contractAccessible = await verifyContractConnection();
-                if (!contractAccessible) {
-                    showAlert('⚠️ No se pudo conectar con el contrato. Verifica la configuración.', 'danger');
+                // Verificar si el contrato está inicializado
+                showAlert('🔍 Verificando estado del contrato...', 'info');
+                const isInitialized = await isContractInitialized();
+                
+                if (!isInitialized) {
+                    showAlert('❌ El contrato no está inicializado. Haz clic en "Inicializar Contrato" primero.', 'danger');
                     return;
                 }
 
@@ -1507,37 +1569,60 @@
                 console.log('  - Goal:', goalXlm, 'XLM');
                 console.log('  - Deadline:', new Date(deadline * 1000).toLocaleString());
                 
+                // Debug: Verificar tipos de argumentos
+                console.log('🔍 Verificando tipos de argumentos:');
+                console.log('  - creatorScVal:', creatorScVal);
+                console.log('  - tokenScVal:', tokenScVal);
+                console.log('  - supplierScVal:', supplierScVal);
+                console.log('  - goalScVal:', goalScVal);
+                console.log('  - deadlineScVal:', deadlineScVal);
+                
                 console.log('🔨 Construyendo transacción...');
                 
-                const transaction = new StellarSdk.TransactionBuilder(account, {
+                // 1) Construir operación
+                const operation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'create_pool',
+                    args: [
+                        creatorScVal,  // creator: Address
+                        tokenScVal,    // token: Address
+                        supplierScVal, // supplier: Address
+                        goalScVal,     // goal: i128
+                        deadlineScVal  // deadline: u64
+                    ]
+                });
+
+                // 2) Armar transacción base
+                let transaction = new StellarSdk.TransactionBuilder(account, {
                     fee: StellarSdk.BASE_FEE,
-                    networkPassphrase: StellarSdk.Networks.TESTNET,  // Usar la constante de testnet
+                    networkPassphrase: CONFIG.networkPassphrase,
                 })
-                .addOperation(
-                    StellarSdk.Operation.invokeContractFunction({
-                        contract: CONFIG.contractId,
-                        function: 'create_pool',
-                        args: [
-                            creatorScVal,  // creator: Address
-                            tokenScVal,    // token: Address
-                            supplierScVal, // supplier: Address
-                            goalScVal,     // goal: i128
-                            deadlineScVal  // deadline: u64
-                        ]
-                    })
-                )
-                .setTimeout(60)
+                .addOperation(operation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
                 .build();
 
                 console.log('✅ Transacción construida exitosamente');
+
+                // 3) Simular y preparar (footprint + resource fee + auth)
+                console.log('🔍 Simulando transacción...');
+                const simulation = await server.simulateTransaction(transaction);
+                console.log('📊 Simulación:', simulation);
+                
+                if (simulation.error) {
+                    throw new Error('Error en simulación: ' + simulation.error);
+                }
+
+                console.log('🔧 Preparando transacción...');
+                transaction = await server.prepareTransaction(transaction);
+                console.log('✅ Transacción preparada con footprint y autorización');
 
                 console.log('✍️ Firmando transacción...');
                 
                 await sendLogToServer('info', 'Firmando transacción con Freighter', null, 'CREATE_POOL');
                 
                 const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
-                    networkPassphrase: 'Test SDF Network ; September 2015',  // Solo passphrase
-                    address: userAddress
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress  // unifica: usa 'address' para ser consistente
                 });
 
                 if (signedTransaction.error) {
@@ -1558,13 +1643,20 @@
 
                 console.log('📤 Enviando transacción...');
                 
+                // 4) Enviar - usar fallback para ambas variantes de Freighter
+                const signedXdr = signedTransaction.signedTxXdr ?? signedTransaction.signedXDR;
+                if (!signedXdr) {
+                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
+                }
+                
                 const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
-                    signedTransaction.signedTxXdr,
+                    signedXdr,
                     CONFIG.networkPassphrase
                 );
 
                 const response = await server.sendTransaction(transactionToSubmit);
-                console.log('📊 Respuesta:', response.status);
+                console.log('📊 Respuesta completa:', response);
+                console.log('📊 Status:', response.status);
 
                 if (response.status === 'SUCCESS') {
                     await sendTransactionLog('CREATE_POOL', {
@@ -1592,7 +1684,20 @@
                     // Mostrar error más específico
                     let errorMessage = 'La transacción falló: ' + response.status;
                     if (response.errorResult) {
+                        console.log('❌ Error details:', JSON.stringify(response.errorResult));
                         errorMessage += '\nDetalles: ' + JSON.stringify(response.errorResult);
+                        
+                        // Analizar tipo de error específico
+                        if (response.errorResult.result && response.errorResult.result._switch) {
+                            const errorType = response.errorResult.result._switch.name;
+                            console.log('🔍 Tipo de error:', errorType);
+                            
+                            if (errorType === 'txMalformed') {
+                                errorMessage += '\n💡 Error: Transacción malformada. Verifica los argumentos del contrato.';
+                            } else if (errorType === 'txFailed') {
+                                errorMessage += '\n💡 Error: Transacción falló. Verifica que el contrato esté inicializado.';
+                            }
+                        }
                     }
                     throw new Error(errorMessage);
                 }
@@ -1649,36 +1754,57 @@
                 
                 const account = await server.getAccount(userAddress);
                 
-                // Crear transacción de approve
-                const approveTransaction = new StellarSdk.TransactionBuilder(account, {
+                // Obtener ledger actual para expiration_ledger
+                const { sequence } = await server.getLatestLedger();
+                const expirationLedger = sequence + 1000; // 1000 ledgers de validez
+                
+                // 1) Construir operación de approve
+                const approveOperation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.tokenId, // Token XLM
+                    function: 'approve',
+                    args: [
+                        StellarSdk.Address.contract(CONFIG.contractId), // spender (nuestro contrato)
+                        StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }), // amount
+                        StellarSdk.nativeToScVal(expirationLedger, { type: 'u32' }) // expiration_ledger
+                    ]
+                });
+
+                // 2) Armar transacción base
+                let approveTransaction = new StellarSdk.TransactionBuilder(account, {
                     fee: StellarSdk.BASE_FEE,
                     networkPassphrase: CONFIG.networkPassphrase,
                 })
-                .addOperation(
-                    StellarSdk.Operation.invokeContractFunction({
-                        contract: CONFIG.tokenId, // Token XLM
-                        function: 'approve',
-                        args: [
-                            StellarSdk.Address.contract(CONFIG.contractId), // spender (nuestro contrato)
-                            StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }) // amount
-                        ]
-                    })
-                )
-                .setTimeout(60)
+                .addOperation(approveOperation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
                 .build();
 
-                // Firmar y enviar approve
+                // 3) Simular y preparar
+                console.log('🔍 Simulando approve...');
+                const approveSimulation = await server.simulateTransaction(approveTransaction);
+                if (approveSimulation.error) {
+                    throw new Error('Error en simulación de approve: ' + approveSimulation.error);
+                }
+
+                console.log('🔧 Preparando approve...');
+                approveTransaction = await server.prepareTransaction(approveTransaction);
+
+                // 4) Firmar y enviar approve
                 const signedApprove = await window.freighter.signTransaction(approveTransaction.toXDR(), {
-                    network: CONFIG.network,
-                    accountToSign: userAddress
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress  // unifica: usa 'address' para ser consistente
                 });
 
                 if (signedApprove.error) {
                     throw new Error('Error firmando approve: ' + signedApprove.error);
                 }
 
+                const approveSignedXdr = signedApprove.signedTxXdr ?? signedApprove.signedXDR;
+                if (!approveSignedXdr) {
+                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
+                }
+
                 const approveToSubmit = StellarSdk.TransactionBuilder.fromXDR(
-                    signedApprove.signedTxXdr,
+                    approveSignedXdr,
                     CONFIG.networkPassphrase
                 );
 
@@ -1692,35 +1818,52 @@
                 // Ahora crear la transacción de contribute
                 console.log('💸 Enviando contribución...');
                 
-                const contributeTransaction = new StellarSdk.TransactionBuilder(account, {
+                // 1) Construir operación de contribute
+                const contributeOperation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'contribute',
+                    args: [
+                        StellarSdk.nativeToScVal(poolId, { type: 'u32' }), // pool_id
+                        StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }) // amount
+                    ]
+                });
+
+                // 2) Armar transacción base
+                let contributeTransaction = new StellarSdk.TransactionBuilder(account, {
                     fee: StellarSdk.BASE_FEE,
                     networkPassphrase: CONFIG.networkPassphrase,
                 })
-                .addOperation(
-                    StellarSdk.Operation.invokeContractFunction({
-                        contract: CONFIG.contractId,
-                        function: 'contribute',
-                        args: [
-                            StellarSdk.nativeToScVal(poolId, { type: 'u32' }), // pool_id
-                            StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }) // amount
-                        ]
-                    })
-                )
-                .setTimeout(60)
+                .addOperation(contributeOperation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
                 .build();
 
-                // Firmar y enviar contribute
+                // 3) Simular y preparar
+                console.log('🔍 Simulando contribute...');
+                const contributeSimulation = await server.simulateTransaction(contributeTransaction);
+                if (contributeSimulation.error) {
+                    throw new Error('Error en simulación de contribute: ' + contributeSimulation.error);
+                }
+
+                console.log('🔧 Preparando contribute...');
+                contributeTransaction = await server.prepareTransaction(contributeTransaction);
+
+                // 4) Firmar y enviar contribute
                 const signedContribute = await window.freighter.signTransaction(contributeTransaction.toXDR(), {
-                    network: CONFIG.network,
-                    accountToSign: userAddress
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress  // unifica: usa 'address' para ser consistente
                 });
 
                 if (signedContribute.error) {
                     throw new Error('Error firmando contribute: ' + signedContribute.error);
                 }
 
+                const contributeSignedXdr = signedContribute.signedTxXdr ?? signedContribute.signedXDR;
+                if (!contributeSignedXdr) {
+                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
+                }
+
                 const contributeToSubmit = StellarSdk.TransactionBuilder.fromXDR(
-                    signedContribute.signedTxXdr,
+                    contributeSignedXdr,
                     CONFIG.networkPassphrase
                 );
 
@@ -1761,33 +1904,52 @@
                 console.log('🆔 Pool ID:', poolId);
 
                 const account = await server.getAccount(userAddress);
-                const transaction = new StellarSdk.TransactionBuilder(account, {
+                
+                // 1) Construir operación
+                const operation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'finalize',
+                    args: [
+                        StellarSdk.nativeToScVal(poolId, { type: 'u32' }) // pool_id
+                    ]
+                });
+
+                // 2) Armar transacción base
+                let transaction = new StellarSdk.TransactionBuilder(account, {
                     fee: StellarSdk.BASE_FEE,
                     networkPassphrase: CONFIG.networkPassphrase,
                 })
-                .addOperation(
-                    StellarSdk.Operation.invokeContractFunction({
-                        contract: CONFIG.contractId,
-                        function: 'finalize',
-                        args: [
-                            StellarSdk.nativeToScVal(poolId, { type: 'u32' }) // pool_id
-                        ]
-                    })
-                )
-                .setTimeout(60)
+                .addOperation(operation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
                 .build();
 
+                // 3) Simular y preparar
+                console.log('🔍 Simulando finalización...');
+                const simulation = await server.simulateTransaction(transaction);
+                if (simulation.error) {
+                    throw new Error('Error en simulación: ' + simulation.error);
+                }
+
+                console.log('🔧 Preparando finalización...');
+                transaction = await server.prepareTransaction(transaction);
+
+                // 4) Firmar y enviar
                 const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
-                    network: CONFIG.network,
-                    accountToSign: userAddress
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress  // unifica: usa 'address' para ser consistente
                 });
 
                 if (signedTransaction.error) {
                     throw new Error(signedTransaction.error);
                 }
 
+                const signedXdr = signedTransaction.signedTxXdr ?? signedTransaction.signedXDR;
+                if (!signedXdr) {
+                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
+                }
+
                 const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
-                    signedTransaction.signedTxXdr,
+                    signedXdr,
                     CONFIG.networkPassphrase
                 );
 
@@ -1825,33 +1987,52 @@
                 console.log('🆔 Pool ID:', poolId);
 
                 const account = await server.getAccount(userAddress);
-                const transaction = new StellarSdk.TransactionBuilder(account, {
+                
+                // 1) Construir operación
+                const operation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'refund',
+                    args: [
+                        StellarSdk.nativeToScVal(poolId, { type: 'u32' }) // pool_id
+                    ]
+                });
+
+                // 2) Armar transacción base
+                let transaction = new StellarSdk.TransactionBuilder(account, {
                     fee: StellarSdk.BASE_FEE,
                     networkPassphrase: CONFIG.networkPassphrase,
                 })
-                .addOperation(
-                    StellarSdk.Operation.invokeContractFunction({
-                        contract: CONFIG.contractId,
-                        function: 'refund',
-                        args: [
-                            StellarSdk.nativeToScVal(poolId, { type: 'u32' }) // pool_id
-                        ]
-                    })
-                )
-                .setTimeout(60)
+                .addOperation(operation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
                 .build();
 
+                // 3) Simular y preparar
+                console.log('🔍 Simulando reembolso...');
+                const simulation = await server.simulateTransaction(transaction);
+                if (simulation.error) {
+                    throw new Error('Error en simulación: ' + simulation.error);
+                }
+
+                console.log('🔧 Preparando reembolso...');
+                transaction = await server.prepareTransaction(transaction);
+
+                // 4) Firmar y enviar
                 const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
-                    network: CONFIG.network,
-                    accountToSign: userAddress
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress  // unifica: usa 'address' para ser consistente
                 });
 
                 if (signedTransaction.error) {
                     throw new Error(signedTransaction.error);
                 }
 
+                const signedXdr = signedTransaction.signedTxXdr ?? signedTransaction.signedXDR;
+                if (!signedXdr) {
+                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
+                }
+
                 const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
-                    signedTransaction.signedTxXdr,
+                    signedXdr,
                     CONFIG.networkPassphrase
                 );
 
@@ -1889,33 +2070,52 @@
                 console.log('🆔 Pool ID:', poolId);
 
                 const account = await server.getAccount(userAddress);
-                const transaction = new StellarSdk.TransactionBuilder(account, {
+                
+                // 1) Construir operación
+                const operation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'get_pool',
+                    args: [
+                        StellarSdk.nativeToScVal(poolId, { type: 'u32' }) // pool_id
+                    ]
+                });
+
+                // 2) Armar transacción base
+                let transaction = new StellarSdk.TransactionBuilder(account, {
                     fee: StellarSdk.BASE_FEE,
                     networkPassphrase: CONFIG.networkPassphrase,
                 })
-                .addOperation(
-                    StellarSdk.Operation.invokeContractFunction({
-                        contract: CONFIG.contractId,
-                        function: 'get_pool',
-                        args: [
-                            StellarSdk.nativeToScVal(poolId, { type: 'u32' }) // pool_id
-                        ]
-                    })
-                )
-                .setTimeout(60)
+                .addOperation(operation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
                 .build();
 
+                // 3) Simular y preparar
+                console.log('🔍 Simulando consulta de pool...');
+                const simulation = await server.simulateTransaction(transaction);
+                if (simulation.error) {
+                    throw new Error('Error en simulación: ' + simulation.error);
+                }
+
+                console.log('🔧 Preparando consulta...');
+                transaction = await server.prepareTransaction(transaction);
+
+                // 4) Firmar y enviar
                 const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
-                    network: CONFIG.network,
-                    accountToSign: userAddress
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress  // unifica: usa 'address' para ser consistente
                 });
 
                 if (signedTransaction.error) {
                     throw new Error(signedTransaction.error);
                 }
 
+                const signedXdr = signedTransaction.signedTxXdr ?? signedTransaction.signedXDR;
+                if (!signedXdr) {
+                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
+                }
+
                 const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
-                    signedTransaction.signedTxXdr,
+                    signedXdr,
                     CONFIG.networkPassphrase
                 );
 
@@ -1923,9 +2123,13 @@
                 console.log('✅ Pool consultado:', response);
 
                 if (response.status === 'SUCCESS') {
-                    // Parsear la respuesta del contrato
-                    const poolData = response.returnValue;
-                    console.log('📊 Datos del pool:', poolData);
+                    // Decodificar la respuesta del contrato (es un ScVal)
+                    const poolDataScVal = response.returnValue;
+                    console.log('📊 Datos del pool (ScVal):', poolDataScVal);
+                    
+                    // Decodificar ScVal a objeto JavaScript
+                    const poolData = StellarSdk.scValToNative(poolDataScVal);
+                    console.log('📊 Datos del pool (decodificado):', poolData);
                     
                     // Mostrar información del pool
                     const info = `
