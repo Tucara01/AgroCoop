@@ -710,9 +710,6 @@
                 <div class="form-group">
                     <label>Dirección del Proveedor:</label>
                     <input type="text" id="supplier" placeholder="GABC..." />
-                    <button type="button" class="btn" onclick="generateTestAddress()" style="margin-top: 5px; font-size: 14px; padding: 8px 12px;">
-                        🧪 Usar Dirección de Prueba
-                    </button>
                 </div>
                 <div class="form-group">
                     <label>Meta (XLM):</label>
@@ -761,12 +758,6 @@
                 </button>
                 <button class="btn" onclick="getPoolInfo()" id="get-pool-btn" disabled>
                     Ver Estado
-                </button>
-                <button class="btn" onclick="checkLastTransaction()" id="check-last-tx-btn" disabled>
-                    🔍 Verificar Última TX
-                </button>
-                <button class="btn" onclick="checkTransactionStatus()" id="check-tx-btn" disabled>
-                    🔍 Verificar TX por Hash
                 </button>
             </div>
         </div>
@@ -1307,7 +1298,7 @@
 
         // Habilitar botones de acción
         function enableActionButtons() {
-            const buttons = ['init-btn', 'create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'get-pool-btn', 'load-pools-btn', 'check-last-tx-btn', 'check-tx-btn'];
+            const buttons = ['init-btn', 'create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'get-pool-btn', 'load-pools-btn'];
             buttons.forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = false;
@@ -1316,7 +1307,7 @@
 
         // Deshabilitar botones de acción
         function disableActionButtons() {
-            const buttons = ['init-btn', 'create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'get-pool-btn', 'load-pools-btn', 'check-last-tx-btn', 'check-tx-btn'];
+            const buttons = ['init-btn', 'create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'get-pool-btn', 'load-pools-btn'];
             buttons.forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = true;
@@ -1400,13 +1391,6 @@
 
         // === FUNCIONES DE POOL (STUBS) ===
 
-        // Generar dirección de prueba para testing
-        function generateTestAddress() {
-            // Dirección de prueba válida para Stellar testnet
-            const testAddress = 'GABC1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890';
-            document.getElementById('supplier').value = testAddress;
-            showAlert('✅ Dirección de prueba insertada: ' + testAddress, 'info');
-        }
 
         // Verificar conectividad con el contrato
         async function verifyContractConnection() {
@@ -1953,7 +1937,7 @@
             try {
                 // Obtener datos del formulario
                 const poolId = parseInt(document.getElementById('contrib-pool-id').value);
-                const amountXlm = parseInt(document.getElementById('contrib-amount').value);
+                const amountXlm = parseFloat(document.getElementById('contrib-amount').value);
 
                 // Validaciones
                 if (!poolId || poolId <= 0) {
@@ -1961,17 +1945,22 @@
                     return;
                 }
 
-                if (!amountXlm || amountXlm <= 0) {
+                if (!Number.isFinite(amountXlm) || amountXlm <= 0) {
                     showAlert('❌ La cantidad debe ser mayor a 0 XLM', 'danger');
                     return;
                 }
 
-                // Convertir XLM a stroops
-                const amountStroops = BigInt(amountXlm * 10000000);
+                // Convertir XLM a stroops (7 decimales para XLM)
+                const amountStroops = BigInt(Math.round(amountXlm * 1e7));
 
                 console.log('💰 Contribuyendo al pool...');
                 console.log('🆔 Pool ID:', poolId);
                 console.log('💵 Cantidad:', amountXlm, 'XLM');
+
+                // Mostrar panel de proceso
+                showProcessPanel();
+                setProcessStep(1);
+                updateProcessStatus('Preparando aprobación...');
 
                 // Primero necesitamos aprobar el contrato para gastar nuestros XLM
                 console.log('🔐 Aprobando contrato para gastar XLM...');
@@ -1982,17 +1971,29 @@
                 const { sequence } = await server.getLatestLedger();
                 const expirationLedger = sequence + 1000; // 1000 ledgers de validez
                 
-                // 1) Construir operación de approve
-                const spenderAddr = StellarSdk.Address.contract(CONFIG.contractId);
+                // 1) Construir operación de approve (4 argumentos: from, spender, amount, expiration)
+                // from = usuario que autoriza
+                const fromAddr = StellarSdk.Address.fromString(userAddress);
+                const fromScVal = StellarSdk.nativeToScVal(fromAddr, { type: 'address' });
+                
+                // spender = tu contrato (usar fromString para consistencia)
+                const spenderAddr = StellarSdk.Address.fromString(CONFIG.contractId);
                 const spenderScVal = StellarSdk.nativeToScVal(spenderAddr, { type: 'address' });
+                
+                // amount y expiration como ya tienes
+                const amountScVal = StellarSdk.nativeToScVal(amountStroops, { type: 'i128' });
+                const expScVal = StellarSdk.nativeToScVal(expirationLedger, { type: 'u32' });
+                
+                console.log('🔍 Debug approve args (4 argumentos):');
+                console.log('  - fromScVal:', fromScVal);
+                console.log('  - spenderScVal:', spenderScVal);
+                console.log('  - amountScVal:', amountScVal);
+                console.log('  - expScVal:', expScVal);
+                
                 const approveOperation = StellarSdk.Operation.invokeContractFunction({
                     contract: CONFIG.tokenId, // Token XLM
                     function: 'approve',
-                    args: [
-                        spenderScVal, // spender (Address -> ScVal)
-                        StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }), // amount
-                        StellarSdk.nativeToScVal(expirationLedger, { type: 'u32' }) // expiration_ledger
-                    ]
+                    args: [fromScVal, spenderScVal, amountScVal, expScVal] // 4 args: from, spender, amount, expiration
                 });
 
                 // 2) Armar transacción base
@@ -2005,12 +2006,16 @@
                 .build();
 
                 // 3) Simular y preparar
+                setProcessStep(2);
+                updateProcessStatus('Simulando aprobación...');
                 console.log('🔍 Simulando approve...');
                 const approveSimulation = await server.simulateTransaction(approveTransaction);
                 if (approveSimulation.error) {
                     throw new Error('Error en simulación de approve: ' + approveSimulation.error);
                 }
 
+                setProcessStep(3);
+                updateProcessStatus('Preparando aprobación...');
                 console.log('🔧 Preparando approve...');
                 approveTransaction = await server.prepareTransaction(approveTransaction);
 
@@ -2037,11 +2042,21 @@
                 const approveResponse = await server.sendTransaction(approveToSubmit);
                 console.log('✅ Approve enviado:', approveResponse);
 
-                if (approveResponse.status !== 'SUCCESS') {
+                // Manejar PENDING usando waitForTx (como en createPool)
+                if (approveResponse.status === 'PENDING') {
+                    console.log('⏳ Approve pendiente, esperando confirmación...');
+                    const final = await waitForTx(approveResponse.hash);
+                    if (final.status !== 'SUCCESS') {
+                        throw new Error('Approve no se confirmó: ' + final.status);
+                    }
+                    console.log('✅ Approve confirmado on-chain');
+                } else if (approveResponse.status !== 'SUCCESS') {
                     throw new Error('Approve falló: ' + approveResponse.status);
                 }
 
                 // Ahora crear la transacción de contribute
+                setProcessStep(4);
+                updateProcessStatus('Preparando contribución...');
                 console.log('💸 Enviando contribución...');
                 
                 // 1) Construir operación de contribute
@@ -2099,18 +2114,49 @@
                 const contributeResponse = await server.sendTransaction(contributeToSubmit);
                 console.log('✅ Contribución enviada:', contributeResponse);
 
-                if (contributeResponse.status === 'SUCCESS') {
-                    showAlert(`✅ Contribución exitosa! ${amountXlm} XLM al pool ${poolId}`, 'success');
-                    
-                    // Limpiar formulario
-                    document.getElementById('contrib-amount').value = '10';
-                } else {
-                    throw new Error('La contribución falló: ' + contributeResponse.status);
+                // Manejar PENDING usando waitForTx (como en createPool y approve)
+                if (contributeResponse.status === 'PENDING') {
+                    storeLastTransaction(contributeResponse.hash);
+                    showProcessHash(contributeResponse.hash);
+                    updateProcessStatus('⏳ Esperando confirmación de contribución...');
+                    const final = await waitForTx(contributeResponse.hash);
+                    if (final.status !== 'SUCCESS') {
+                        throw new Error(`La contribución falló on-chain: ${final.status}`);
+                    }
+                    console.log('✅ Contribución confirmada on-chain');
+                } else if (contributeResponse.status !== 'SUCCESS') {
+                    throw new Error(`La contribución no fue aceptada: ${contributeResponse.status}`);
                 }
+
+                // Si llegamos aquí, fue SUCCESS on-chain
+                setProcessStep(5);
+                updateProcessStatus('✅ Contribución confirmada');
+                showAlert(`✅ ¡Contribución exitosa! ${amountXlm} XLM al pool ${poolId}`, 'success');
+
+                // 🔄 Refrescar la tarjeta del pool (con pequeño retardo para consistencia eventual)
+                try {
+                    // Asegura que el selector de "Acciones" también apunte a este pool
+                    document.getElementById('action-pool-id').value = String(poolId);
+                    // Pequeño retardo para asegurar consistencia eventual
+                    setTimeout(async () => {
+                        try {
+                            await getPoolInfo(poolId);   // <- vuelve a simular get_pool y re-renderiza
+                        } catch (e) {
+                            console.warn('No se pudo refrescar el pool automáticamente:', e);
+                        }
+                    }, 1200);
+                } catch (e) {
+                    console.warn('Error configurando refresco del pool:', e);
+                }
+                
+                // Limpiar formulario y ocultar panel
+                document.getElementById('contrib-amount').value = '10';
+                setTimeout(() => hideProcessPanel(), 2000);
 
             } catch (error) {
                 console.error('❌ Error contribuyendo:', error);
                 showAlert('❌ Error contribuyendo: ' + error.message, 'danger');
+                setTimeout(() => hideProcessPanel(), 3000);
             }
         }
 
