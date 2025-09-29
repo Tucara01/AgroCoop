@@ -1983,11 +1983,13 @@
                 const expirationLedger = sequence + 1000; // 1000 ledgers de validez
                 
                 // 1) Construir operación de approve
+                const spenderAddr = StellarSdk.Address.contract(CONFIG.contractId);
+                const spenderScVal = StellarSdk.nativeToScVal(spenderAddr, { type: 'address' });
                 const approveOperation = StellarSdk.Operation.invokeContractFunction({
                     contract: CONFIG.tokenId, // Token XLM
                     function: 'approve',
                     args: [
-                        StellarSdk.Address.contract(CONFIG.contractId), // spender (nuestro contrato)
+                        spenderScVal, // spender (Address -> ScVal)
                         StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }), // amount
                         StellarSdk.nativeToScVal(expirationLedger, { type: 'u32' }) // expiration_ledger
                     ]
@@ -2043,11 +2045,14 @@
                 console.log('💸 Enviando contribución...');
                 
                 // 1) Construir operación de contribute
+                const userAddr = StellarSdk.Address.fromString(userAddress);
+                const userScVal = StellarSdk.nativeToScVal(userAddr, { type: 'address' });
                 const contributeOperation = StellarSdk.Operation.invokeContractFunction({
                     contract: CONFIG.contractId,
                     function: 'contribute',
                     args: [
                         StellarSdk.nativeToScVal(poolId, { type: 'u32' }), // pool_id
+                        userScVal,                                         // user: Address
                         StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }) // amount
                     ]
                 });
