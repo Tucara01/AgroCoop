@@ -1,0 +1,3980 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agro Coop - Cooperativa Rural del Sur</title>
+    <script src="https://unpkg.com/@stellar/stellar-sdk@12.1.0/dist/stellar-sdk.min.js"></script>
+    <script type="module">
+        // Importar Freighter API usando ES6 modules como indica la documentación oficial
+        import freighterApi from 'https://cdn.skypack.dev/@stellar/freighter-api';
+        
+        // Hacer disponible globalmente para compatibilidad
+        window.freighterApi = freighterApi;
+        window.freighter = freighterApi; // Alias para compatibilidad
+        
+        console.log('✅ Freighter API importado correctamente:', freighterApi);
+        
+        // Disparar evento personalizado cuando esté listo
+        window.dispatchEvent(new CustomEvent('freighter-ready'));
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c59 25%, #6b8e23 50%, #8fbc8f 75%, #98fb98 100%);
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 100%;
+            width: 100%;
+            margin: 0;
+            background: linear-gradient(145deg, #f5f5dc 0%, #f0e68c 100%);
+            border-radius: 0;
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.15),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+            padding: 30px;
+            border: none;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            border-bottom: 3px solid #8b4513;
+            background: linear-gradient(90deg, transparent 0%, rgba(139,69,19,0.1) 50%, transparent 100%);
+            position: relative;
+            max-width: 1800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .header::before {
+            content: "🌾";
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2em;
+            animation: sway 3s ease-in-out infinite;
+        }
+        
+        .header::after {
+            content: "🌾";
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2em;
+            animation: sway 3s ease-in-out infinite reverse;
+        }
+        
+        @keyframes sway {
+            0%, 100% { transform: translateY(-50%) rotate(-2deg); }
+            50% { transform: translateY(-50%) rotate(2deg); }
+        }
+        
+        .header h1 {
+            color: #2d5016;
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: bold;
+        }
+        
+        .header p {
+            color: #4a7c59;
+            font-size: 1.2em;
+            font-style: italic;
+        }
+        
+        .wallet-section {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(145deg, #f0e68c 0%, #daa520 100%);
+            border-radius: 15px;
+            padding: 15px 20px;
+            text-align: center;
+            border: 2px solid #8b4513;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 200px;
+        }
+        
+        .wallet-section h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+            color: #2d5016;
+        }
+        
+        .wallet-status {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .wallet-connect-btn {
+            background: linear-gradient(145deg, #8b4513 0%, #a0522d 100%);
+            color: #f5f5dc;
+            border: 2px solid #654321;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .wallet-connect-btn:hover {
+            background: linear-gradient(145deg, #a0522d 0%, #8b4513 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .wallet-address-display {
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c59 100%);
+            color: #f5f5dc;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #8b4513;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .wallet-address-display:hover {
+            background: linear-gradient(135deg, #4a7c59 0%, #2d5016 100%);
+            transform: scale(1.02);
+        }
+        
+        .wallet-disconnect-btn {
+            background: linear-gradient(145deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: 2px solid #bd2130;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .wallet-disconnect-btn:hover {
+            background: linear-gradient(145deg, #c82333 0%, #dc3545 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .wallet-info {
+            background: linear-gradient(145deg, #f0e68c 0%, #daa520 100%);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: left;
+            border: 2px solid #8b4513;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .wallet-info h4 {
+            margin: 0 0 10px 0;
+            color: #2d5016;
+            font-weight: bold;
+        }
+
+        .wallet-info p {
+            margin: 5px 0;
+            color: #4a7c59;
+            font-weight: 500;
+        }
+
+        .wallet-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* Estilos para el panel de dirección de wallet */
+        .wallet-address-panel {
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c59 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            color: #f5f5dc;
+            border: 2px solid #8b4513;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .wallet-address-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .wallet-address-header h4 {
+            margin: 0;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .connection-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .wallet-address-content {
+            margin-bottom: 20px;
+        }
+
+        .address-section {
+            margin-bottom: 15px;
+        }
+
+        .address-section label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .address-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .address-display code {
+            flex: 1;
+            background: none;
+            color: #fbbf24;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+            padding: 0;
+        }
+
+        .btn-copy {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .address-short {
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .address-short span {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .network-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .network-section label {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+        }
+
+        .network-badge {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .status-connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        /* Estilos para el panel de estado del proceso */
+        .process-status-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .process-status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .process-status-header h4 {
+            margin: 0;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .process-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .process-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .process-status-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .process-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .process-step.active {
+            background: rgba(255, 255, 255, 0.2);
+            opacity: 1;
+            transform: scale(1.02);
+        }
+
+        .process-step.completed {
+            background: rgba(34, 197, 94, 0.2);
+            opacity: 1;
+        }
+
+        .step-icon {
+            font-size: 1.2em;
+            min-width: 24px;
+        }
+
+        .step-text {
+            flex: 1;
+            font-size: 0.9em;
+        }
+
+        .process-hash {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .process-hash label {
+            display: block;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .process-hash code {
+            background: rgba(0, 0, 0, 0.3);
+            color: #fbbf24;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            word-break: break-all;
+        }
+        
+        
+        .btn {
+            background: linear-gradient(145deg, #8b4513 0%, #a0522d 100%);
+            color: #f5f5dc;
+            border: 2px solid #654321;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .btn:hover {
+            background: linear-gradient(145deg, #a0522d 0%, #8b4513 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .section {
+            background: linear-gradient(145deg, #f0e68c 0%, #daa520 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #8b4513;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .section.full-width {
+            max-width: 1800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .section h3 {
+            color: #2d5016;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2d5016;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #8b4513;
+            border-radius: 8px;
+            background: #f5f5dc;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #8b4513;
+            box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.2);
+            background: #fff8dc;
+        }
+        
+        .pool-card {
+            background: linear-gradient(145deg, #f5f5dc 0%, #f0e68c 100%);
+            border: 2px solid #8b4513;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .pool-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Carrusel Styles */
+        .carousel-container {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 50px;
+        }
+
+        .carousel-wrapper {
+            overflow: hidden;
+            border-radius: 15px;
+        }
+
+        .carousel-track {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            gap: 20px;
+        }
+
+        .carousel-card {
+            flex: 0 0 calc(33.333% - 14px);
+            background: linear-gradient(145deg, #f5f5dc 0%, #f0e68c 100%);
+            border: 2px solid #8b4513;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .carousel-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+            border: 2px solid #654321;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .carousel-btn:hover {
+            background: linear-gradient(135deg, #a0522d 0%, #8b4513 100%);
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .carousel-btn-left {
+            left: 10px;
+        }
+
+        .carousel-btn-right {
+            right: 10px;
+        }
+
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .carousel-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #8b4513;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .carousel-dot.active {
+            opacity: 1;
+            transform: scale(1.2);
+            background: #654321;
+        }
+
+        .carousel-dot:hover {
+            opacity: 0.8;
+            transform: scale(1.1);
+        }
+
+        .prefab-icon {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .carousel-card {
+                flex: 0 0 calc(50% - 10px);
+                min-height: 250px;
+            }
+            
+            .carousel-container {
+                padding: 0 40px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .carousel-card {
+                flex: 0 0 100%;
+                min-height: 220px;
+            }
+            
+            .carousel-container {
+                padding: 0 30px;
+            }
+        }
+        
+        .pool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .pool-id {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .pool-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-funded {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-expired {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #28a745, #20c997);
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .pool-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .info-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .connected {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .disconnected {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 1400px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 25px;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .pool-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌾 Agro Coop del Sur</h1>
+            <p>Cooperativa rural para compras colectivas de insumos agrícolas y leña</p>
+        </div>
+
+        <!-- Sección de Wallet - Esquina Superior Derecha -->
+        <div class="wallet-section">
+            <h3>🔗 Billetera</h3>
+            <div class="wallet-status">
+                <!-- Estado de conexión -->
+                <div id="wallet-connect-state" style="display: none;">
+                    <button class="wallet-connect-btn" id="connect-btn" onclick="connectWallet()">
+                        🌾 Conectar
+                    </button>
+                    <button id="retry-btn" class="wallet-connect-btn" style="display:none" onclick="retryFreighterDetection()">
+                        🔁 Reintentar Detección
+                    </button>
+                </div>
+                
+                <!-- Estado conectado -->
+                <div id="wallet-connected-state" style="display: none;">
+                    <div class="wallet-address-display" id="wallet-address-display" onclick="copyAddress()" title="Click para copiar">
+                        <span id="wallet-address-short">GDSAGECL...2ILJS5FA</span>
+                    </div>
+                    <button class="wallet-disconnect-btn" id="disconnect-btn" onclick="disconnectWallet()">
+                        🚪 Desconectar
+                    </button>
+                </div>
+                
+                <!-- Estado de carga -->
+                <div id="wallet-loading-state">
+                    <span id="status-indicator" class="status-indicator status-loading">🔄 Verificando...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertas -->
+        <div id="alerts"></div>
+
+        <!-- Panel de Estado del Proceso -->
+        <div id="process-status-panel" class="process-status-panel" style="display: none;">
+            <div class="process-status-header">
+                <h4>🔄 Procesando Transacción</h4>
+                <div class="process-status-badge" id="process-status-badge">
+                    <span class="process-dot"></span>
+                    <span id="process-status-text">Iniciando...</span>
+                </div>
+            </div>
+            <div class="process-status-content">
+                <div class="process-step" id="process-step-1">
+                    <span class="step-icon">📝</span>
+                    <span class="step-text">Creando transacción...</span>
+                </div>
+                <div class="process-step" id="process-step-2">
+                    <span class="step-icon">✍️</span>
+                    <span class="step-text">Firmando con Freighter...</span>
+                </div>
+                <div class="process-step" id="process-step-3">
+                    <span class="step-icon">📤</span>
+                    <span class="step-text">Enviando a la red...</span>
+                </div>
+                <div class="process-step" id="process-step-4">
+                    <span class="step-icon">⏳</span>
+                    <span class="step-text">Esperando confirmación...</span>
+                </div>
+                <div class="process-step" id="process-step-5">
+                    <span class="step-icon">✅</span>
+                    <span class="step-text">Procesando resultado...</span>
+                </div>
+            </div>
+            <div class="process-hash" id="process-hash-display" style="display: none;">
+                <label>Hash de la transacción:</label>
+                <code id="process-hash-value">-</code>
+            </div>
+        </div>
+
+        <!-- Cooperativas Activas - Home Principal -->
+        <div class="section full-width">
+            <h3>📊 Cooperativas Activas</h3>
+            <button class="btn" onclick="loadActivePools()" id="load-pools-btn" disabled>
+                📊 Cargar Cooperativas
+            </button>
+            <button class="btn btn-warning" onclick="devBootstrapPools(1, 120)" title="Bootstrap: reconstruir pools desde on-chain">
+                🔄 Bootstrap
+            </button>
+            <div id="pools-list"></div>
+        </div>
+
+        <!-- Grid principal -->
+        <div class="grid">
+            <!-- Crear Pool -->
+            <div class="section">
+                <h3>🌱 Crear Cooperativa</h3>
+                <div class="form-group">
+                    <label>Proveedor de Insumos:</label>
+                    <input type="text" id="supplier" placeholder="GABC... o nombre del proveedor" />
+                    <small style="color: #666; font-size: 0.9em;">Dirección Stellar o alias verificado</small>
+                </div>
+                <div class="form-group">
+                    <label>Meta de Recaudación (XLM):</label>
+                    <input type="number" id="goal" placeholder="100" min="1" oninput="updateConversion('goal', 'goal-conversion')" />
+                    <small id="goal-conversion" style="color: #666; font-size: 0.9em;">≈ $100.000 CLP</small>
+                </div>
+                <div class="form-group">
+                    <label>Vence el:</label>
+                    <input type="datetime-local" id="deadline" />
+                    <small style="color: #666; font-size: 0.9em;">Fecha y hora de vencimiento</small>
+                </div>
+                <button class="btn btn-success" onclick="createPool()" id="create-btn" disabled>
+                    🌱 Crear Cooperativa
+                </button>
+            </div>
+
+            <!-- Contribuir -->
+            <div class="section">
+                <h3>🌾 Aportar a Cooperativa</h3>
+                <div class="form-group">
+                    <label>Cooperativa activa:</label>
+                    <select id="contrib-pool-select" disabled>
+                        <option value="">Cargar cooperativas activas (arriba)</option>
+                    </select>
+                    <!-- (Opcional) deja el input como fallback oculto -->
+                    <input type="text" id="contrib-pool-id" style="display:none" />
+                </div>
+                <div class="form-group">
+                    <label>Monto del Aporte (XLM):</label>
+                    <input type="number" id="contrib-amount" placeholder="10" min="0.1" step="0.1" oninput="updateConversion('contrib-amount', 'contrib-conversion')" />
+                    <small id="contrib-conversion" style="color: #666; font-size: 0.9em;">≈ $10.000 CLP</small>
+                </div>
+                <button class="btn" onclick="contributeToPool()" id="contrib-btn" disabled>
+                    🌾 Aportar
+                </button>
+                <small style="color: #666; font-size: 0.9em; display: block; margin-top: 5px;">
+                    Se te pedirá autorizar y luego confirmaremos tu aporte
+                </small>
+            </div>
+
+            <!-- Acciones de Pool -->
+            <div class="section">
+                <h3>⚡ Gestionar Cooperativa</h3>
+                <div class="form-group">
+                    <label>Código de la Cooperativa:</label>
+                    <input type="text" id="action-pool-id" placeholder="Pega el código o enlace aquí" />
+                </div>
+                <button class="btn btn-success" onclick="finalizePool()" id="finalize-btn" disabled>
+                    💳 Pagar al Proveedor
+                </button>
+                <button class="btn btn-danger" onclick="requestRefund()" id="refund-btn" disabled>
+                    💰 Obtener Reembolso
+                </button>
+            </div>
+        </div>
+
+        <!-- 🧩 Plantillas rápidas -->
+        <div class="section full-width" id="prefab-section">
+            <h3>🧩 Plantillas rápidas</h3>
+            <div class="carousel-container">
+                <button class="carousel-btn carousel-btn-left" onclick="moveCarousel(-1)">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15,18 9,12 15,6"></polyline>
+                    </svg>
+                </button>
+                
+                <div class="carousel-wrapper">
+                    <div class="carousel-track" id="carousel-track">
+                        <!-- Las plantillas se generarán dinámicamente -->
+                    </div>
+                </div>
+                
+                <button class="carousel-btn carousel-btn-right" onclick="moveCarousel(1)">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9,18 15,12 9,6"></polyline>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="carousel-dots" id="carousel-dots">
+                <!-- Los puntos se generarán dinámicamente -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Configuración
+        const CONFIG = {
+            contractId: 'CBAID77FC57C6LNDGPS2RTTWA6RZY72LXJYQMLZMX3NBO4VSWGXLTVT2',
+            xlmToClpRate: 100, // 1 XLM = 100 CLP
+            // XLM nativo en Soroban testnet - dirección correcta del contrato de token XLM
+            tokenId: 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC',
+            network: 'testnet',
+            rpcUrl: 'https://soroban-testnet.stellar.org',
+            sorobanRpcUrl: 'https://soroban-testnet.stellar.org', // URL específica para RPC crudo
+            // Passphrase correcta para testnet
+            networkPassphrase: 'Test SDF Network ; September 2015'
+        };
+
+        // Variables globales
+        let server;
+        let userAddress = null;
+        let isConnected = false;
+        let isFreighterAvailable = false;
+
+        // Función para convertir XLM a CLP
+        function xlmToClp(xlmAmount) {
+            return Math.round(xlmAmount * CONFIG.xlmToClpRate);
+        }
+
+        // Función para formatear CLP con separadores de miles
+        function formatClp(amount) {
+            return new Intl.NumberFormat('es-CL').format(amount);
+        }
+
+        // Función para actualizar conversión en tiempo real
+        function updateConversion(inputId, conversionId) {
+            const input = document.getElementById(inputId);
+            const conversion = document.getElementById(conversionId);
+            
+            if (input && conversion) {
+                const xlmValue = parseFloat(input.value) || 0;
+                const clpValue = xlmToClp(xlmValue);
+                conversion.textContent = `≈ $${formatClp(clpValue)} CLP`;
+            }
+        }
+
+        // -------- Prefabs --------
+        const PREFAB_SUPPLIER = 'GDP3KC3C7TIY3JV4PIYLLWTSI2CWTDP5GIZK65SEX3V56XXA5GSYJR2M';
+        const PREFABS = {
+            lenia:        { title: 'Leña para invierno',   clp: 1320000, months: 5, icon: 'firewood' },
+            gas:          { title: 'Gas 15 kg comunitario', clp: 600000,  months: 1, icon: 'gas' },
+            canasta:      { title: 'Canasta básica mensual',clp: 800000,  months: 1, icon: 'basket' },
+            fertilizante: { title: 'Fertilizante siembra',  clp: 2500000, months: 3, icon: 'fertilizer' },
+            semillas:     { title: 'Semillas de temporada', clp: 450000,  months: 2, icon: 'seeds' },
+            herramientas: { title: 'Herramientas agrícolas', clp: 1800000, months: 6, icon: 'tools' },
+            medicinas:    { title: 'Medicinas veterinarias', clp: 320000,  months: 1, icon: 'medicine' },
+            electricidad: { title: 'Pago de electricidad',  clp: 750000,  months: 1, icon: 'electricity' }
+        };
+
+// --- Cache de pools activos para el dropdown ---
+const activePoolsCache = new Map();
+
+// --- Watcher de deadlines para refresco automático ---
+const poolDeadlineTimers = new Map();
+
+// Poller de seguridad para refrescar pools activos cada 2 minutos
+setInterval(async () => {
+    try {
+        console.log('🔄 Poller de seguridad: verificando pools activos...');
+        for (const pool of activePoolsCache.values()) {
+            await getPoolInfo(Number(pool.id));
+        }
+    } catch (e) {
+        console.warn('Poller de pools activos falló:', e);
+    }
+}, 120000); // 2 minutos
+
+        // Asegura balance suficiente en el contrato de token (SAC) para contribuir
+        async function ensureWrappedXlm(amountStroops, tokenId = CONFIG.tokenId) {
+            const account = await server.getAccount(userAddress);
+            const userAddr = StellarSdk.Address.fromString(userAddress);
+
+            // 1) Consultar balance del token (read-only por simulación)
+            const balanceOp = StellarSdk.Operation.invokeContractFunction({
+                contract: tokenId,
+                function: 'balance',
+                args: [StellarSdk.nativeToScVal(userAddr, { type: 'address' })]
+            });
+            let balTx = new StellarSdk.TransactionBuilder(account, {
+                fee: StellarSdk.BASE_FEE, 
+                networkPassphrase: CONFIG.networkPassphrase
+            }).addOperation(balanceOp).setTimeout(60).build();
+
+            const balSim = await server.simulateTransaction(balTx);
+            if (balSim.error) throw new Error('No se pudo simular balance: ' + balSim.error);
+            const current = BigInt(StellarSdk.scValToNative(
+                balSim.result?.retval ?? balSim.result?.returnValue ?? balSim.returnValue
+            ));
+
+            // 2) Si falta, depositar diferencia
+            if (current < amountStroops) {
+                const diff = amountStroops - current;
+
+                // IMPORTANTE: necesitarás saldo XLM clásico suficiente (reserva base + fees)
+                const depositOp = StellarSdk.Operation.invokeContractFunction({
+                    contract: tokenId,
+                    function: 'deposit',
+                    args: [
+                        StellarSdk.nativeToScVal(userAddr, { type: 'address' }),
+                        StellarSdk.nativeToScVal(diff, { type: 'i128' })
+                    ]
+                });
+
+                let depTx = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE, 
+                    networkPassphrase: CONFIG.networkPassphrase
+                }).addOperation(depositOp).setTimeout(600).build();
+
+                const depSim = await server.simulateTransaction(depTx);
+                if (depSim.error) throw new Error('Error en simulación de deposit: ' + depSim.error);
+
+                depTx = await server.prepareTransaction(depTx);
+                const depSigned = await window.freighter.signTransaction(depTx.toXDR(), {
+                    networkPassphrase: CONFIG.networkPassphrase, 
+                    address: userAddress
+                });
+                if (depSigned.error) throw new Error(depSigned.error);
+                
+                const depXdr = depSigned.signedTxXdr ?? depSigned.signedXDR;
+                const depSubmit = await server.sendTransaction(
+                    StellarSdk.TransactionBuilder.fromXDR(depXdr, CONFIG.networkPassphrase)
+                );
+
+                // Espera confirmación si viene PENDING
+                if (depSubmit.status === 'PENDING') {
+                    const final = await waitForTx(depSubmit.hash);
+                    if (final.status !== 'SUCCESS') {
+                        throw new Error('Deposit falló on-chain: ' + final.status);
+                    }
+                } else if (depSubmit.status !== 'SUCCESS') {
+                    throw new Error('Deposit no aceptado: ' + depSubmit.status);
+                }
+            }
+        }
+
+        function isPoolActive(pool) {
+            const now = Math.floor(Date.now()/1000);
+            return pool && !pool.finalized && Number(pool.deadline) > now;
+        }
+
+        function rememberActivePool(pool) {
+            if (!pool) return;
+            if (isPoolActive(pool)) {
+                activePoolsCache.set(String(pool.id), pool);
+            } else {
+                activePoolsCache.delete(String(pool.id));
+            }
+        }
+
+function refreshContribDropdownFromCache() {
+    const sel = document.getElementById('contrib-pool-select');
+    if (!sel) return;
+
+    sel.innerHTML = '';
+    const placeholder = document.createElement('option');
+    const size = activePoolsCache.size;
+    placeholder.value = '';
+    placeholder.textContent = size ? 'Selecciona una cooperativa…' : 'No hay cooperativas activas';
+    sel.appendChild(placeholder);
+
+    [...activePoolsCache.values()]
+        .sort((a,b) => Number(a.id) - Number(b.id))
+        .forEach(pool => {
+            const option = document.createElement('option');
+            const goalXlm   = Number(pool.goal)   / 1e7;
+            const raisedXlm = Number(pool.raised) / 1e7;
+            const pct = goalXlm > 0 ? Math.floor((raisedXlm/goalXlm)*100) : 0;
+            const d = new Date(Number(pool.deadline) * 1000);
+            option.value = String(pool.id);
+            option.textContent = `#${pool.id} — ${pct}% — meta ${goalXlm} XLM — vence ${d.toLocaleDateString('es-CL')}`;
+            sel.appendChild(option);
+        });
+
+    sel.disabled = size === 0;
+}
+
+// Máximo seguro para setTimeout (2^31-1 ms) con margen
+const MAX_TIMEOUT_MS = 2_147_000_000;
+
+// Espera en tramos hasta completar "ms"
+// onDone se ejecuta al final
+function waitLong(ms, onDone) {
+  if (ms <= MAX_TIMEOUT_MS) {
+    return setTimeout(onDone, ms);
+  }
+  // programa un tramo y recursivo
+  return setTimeout(() => {
+    waitLong(ms - MAX_TIMEOUT_MS, onDone);
+  }, MAX_TIMEOUT_MS);
+}
+
+// Programa un refresco automático al llegar el deadline
+function scheduleDeadlineWatcher(poolId, deadlineSec) {
+    try {
+        // Limpia timer anterior si existía
+        const prev = poolDeadlineTimers.get(poolId);
+        if (prev) clearTimeout(prev);
+
+        const msUntilDeadline = (Number(deadlineSec) * 1000) - Date.now();
+        // si ya pasó, refrescar pronto
+        const delay = msUntilDeadline <= 0 ? 500 : (msUntilDeadline + 1500);
+
+        const handle = waitLong(delay, async () => {
+            try {
+                console.log(`🕐 Deadline alcanzado para pool #${poolId}, refrescando estado...`);
+                await getPoolInfo(poolId);
+            } catch (e) {
+                console.warn(`Error al refrescar pool #${poolId} tras deadline:`, e);
+            }
+        });
+
+        poolDeadlineTimers.set(poolId, handle);
+        console.log(`⏰ Programado refresco para pool #${poolId} en ${Math.round(delay/1000)}s`);
+    } catch (e) {
+        console.warn('No se pudo programar watcher de deadline:', e);
+    }
+}
+
+// Limpia un watcher específico (útil al finalizar/reembolsar)
+function clearDeadlineWatcher(poolId) {
+    const t = poolDeadlineTimers.get(poolId);
+    if (t) {
+        clearTimeout(t);
+        poolDeadlineTimers.delete(poolId);
+        console.log(`⏰ Timer limpiado para pool #${poolId}`);
+    }
+}
+
+// Limpia todos los timers de deadline (útil al desconectar)
+function clearAllDeadlineTimers() {
+    console.log('🧹 Limpiando todos los watchers de deadline...');
+    for (const [poolId, timer] of poolDeadlineTimers.entries()) {
+        clearTimeout(timer);
+        console.log(`⏰ Timer limpiado para pool #${poolId}`);
+    }
+    poolDeadlineTimers.clear();
+}
+
+        // Valida si un pool puede ser reembolsado según las reglas del contrato
+        function canRefund(pool) {
+            const now = Math.floor(Date.now()/1000);
+            return (
+                pool &&
+                !pool.finalized &&
+                now > Number(pool.deadline) &&
+                BigInt(pool.raised) < BigInt(pool.goal)
+            );
+        }
+
+        // Formatea Date a 'YYYY-MM-DDTHH:MM' en HORA LOCAL para <input type="datetime-local">
+        function formatLocalDatetime(d) {
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        function addMonthsFromNowLocal(months) {
+            const d = new Date();
+            d.setMonth(d.getMonth() + months);
+            return formatLocalDatetime(d);
+        }
+
+        // Aplica la plantilla y dispara createPool()
+        async function createPrefab(key) {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta tu billetera para crear una cooperativa', 'danger');
+                return;
+            }
+
+            const p = PREFABS[key];
+            if (!p) { 
+                showAlert('❌ Plantilla no encontrada', 'danger'); 
+                return; 
+            }
+
+            // CLP → XLM (redondeo hacia arriba)
+            const xlm = Math.ceil(p.clp / CONFIG.xlmToClpRate);
+
+            // Prellenar formulario principal
+            const supEl = document.getElementById('supplier');
+            const goalEl = document.getElementById('goal');
+            const dlEl   = document.getElementById('deadline');
+
+            if (supEl) supEl.value = PREFAB_SUPPLIER;
+            if (goalEl) goalEl.value = String(xlm);
+            if (dlEl)   dlEl.value   = addMonthsFromNowLocal(p.months);
+
+            // Actualiza el texto de conversión bajo la meta
+            updateConversion('goal', 'goal-conversion');
+
+            // Confirmación UX
+            const ok = confirm(`¿Crear cooperativa "${p.title}"?\n\n` +
+                             `Proveedor: ${PREFAB_SUPPLIER}\n` +
+                             `Meta: ${xlm} XLM (≈ $${formatClp(p.clp)} CLP)\n` +
+                             `Vence en: ${p.months} mes(es)`);
+            if (!ok) return;
+
+            // Ejecuta el flujo normal (simula → firma → envía → espera)
+            await createPool();
+        }
+
+        // Variables del carrusel
+        let currentSlide = 0;
+        const cardsPerSlide = 3;
+
+        // Iconos SVG para las plantillas
+        const SVG_ICONS = {
+            firewood: `<svg class="prefab-icon" width="64" height="48" viewBox="0 0 64 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-wood-bundle">
+                <title id="title-wood-bundle">Leña para invierno</title>
+                <style>
+                    :root{
+                        --bark:#8B5E3C;   /* corteza */
+                        --wood:#D8A565;   /* interior del corte */
+                        --grain:#6B442B;  /* vetas */
+                        --strap:#3F7A3C;  /* cinta/amarre (verde cooperativa) */
+                        --edge:#5a3821;   /* borde sutil */
+                    }
+                </style>
+                <!-- Tronco izquierdo -->
+                <rect x="12" y="10" width="14" height="28" rx="6" fill="var(--bark)" />
+                <circle cx="19" cy="12" r="6" fill="var(--wood)" />
+                <path d="M19 9.2a3 3 0 1 1 0 5.6m0-3.7a1.6 1.6 0 1 1 0 3.2"
+                      stroke="var(--grain)" stroke-width="1.2" fill="none" />
+                <!-- Tronco central (ligeramente más alto) -->
+                <rect x="26" y="8" width="14" height="32" rx="6" fill="var(--bark)" />
+                <circle cx="33" cy="10" r="6" fill="var(--wood)" />
+                <path d="M33 7.2a3 3 0 1 1 0 5.6m0-3.7a1.6 1.6 0 1 1 0 3.2"
+                      stroke="var(--grain)" stroke-width="1.2" fill="none" />
+                <!-- Tronco derecho -->
+                <rect x="40" y="10" width="14" height="28" rx="6" fill="var(--bark)" />
+                <circle cx="47" cy="12" r="6" fill="var(--wood)" />
+                <path d="M47 9.2a3 3 0 1 1 0 5.6m0-3.7a1.6 1.6 0 1 1 0 3.2"
+                      stroke="var(--grain)" stroke-width="1.2" fill="none" />
+                <!-- Cinta que amarra el haz -->
+                <rect x="10" y="22" width="44" height="6" rx="3" fill="var(--strap)"/>
+                <!-- Pequeña sombra/borde para mayor lectura -->
+                <rect x="10" y="22" width="44" height="6" rx="3" fill="none" stroke="var(--edge)" stroke-opacity=".15"/>
+                <!-- Base sutil para asentar el icono -->
+                <ellipse cx="32" cy="41" rx="22" ry="3" fill="rgba(0,0,0,.06)"/>
+            </svg>`,
+            gas: `<svg class="prefab-icon" width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-gas-yellow">
+                <title id="title-gas-yellow">Gas 15 kg comunitario</title>
+                <style>
+                    :root{
+                        --body:#F9C52C;   /* cuerpo amarillo */
+                        --cap:#D99A00;    /* tapa/detalles más oscuros */
+                        --edge:#7A5B00;   /* borde para contraste */
+                        --stripe:#FFF3C2; /* franja central clara */
+                    }
+                </style>
+                <!-- tapa -->
+                <rect x="8" y="2" width="8" height="3" rx="1" fill="var(--cap)"/>
+                <!-- cuerpo -->
+                <rect x="5" y="5" width="14" height="14" rx="3" fill="var(--body)"/>
+                <!-- franja central -->
+                <rect x="5" y="11" width="14" height="2" fill="var(--stripe)"/>
+                <!-- borde/contorno -->
+                <rect x="5" y="5" width="14" height="14" rx="3" fill="none" stroke="var(--edge)" stroke-width="1.4"/>
+                <!-- pequeña válvula (detalle) -->
+                <rect x="10" y="4" width="4" height="1.6" rx="0.6" fill="var(--cap)"/>
+            </svg>`,
+            basket: `<svg class="prefab-icon" width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-basket">
+                <title id="title-basket">Canasta básica mensual</title>
+                <style>
+                    :root {
+                        --basket:#C58F50;  /* color mimbre */
+                        --handle:#8B5E3C;  /* asa más oscura */
+                        --lines:#6B442B;   /* rejilla */
+                    }
+                </style>
+                <!-- asa -->
+                <path d="M7 9c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="var(--handle)" stroke-width="2" fill="none"/>
+                <!-- cuerpo -->
+                <rect x="3" y="9" width="18" height="10" rx="2.2" fill="var(--basket)" stroke="var(--handle)" stroke-width="1.8"/>
+                <!-- rejilla -->
+                <path d="M7 12v4M12 12v4M17 12v4M4.5 14h15" stroke="var(--lines)" stroke-width="1.5"/>
+            </svg>`,
+            fertilizer: `<svg class="prefab-icon" width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-labelledby="title-fertilizer" role="img">
+                <title id="title-fertilizer">Fertilizante de siembra</title>
+                <style>
+                    :root{
+                        --bag:#C58F50;
+                        --edge:#8B5E3C;
+                        --leaf:#2E7D32;
+                    }
+                </style>
+                <!-- saco -->
+                <rect x="6" y="5" width="12" height="14" rx="2" fill="var(--bag)" stroke="var(--edge)" stroke-width="1.6"/>
+                <!-- borde superior -->
+                <rect x="5.5" y="4" width="13" height="2" rx="1" fill="var(--edge)"/>
+                <!-- brote -->
+                <path d="M12 11c-1.5 0-2.5 1.2-2.5 2.5 0 1.4 1.1 2.5 2.5 2.5s2.5-1.1 2.5-2.5C14.5 12.2 13.5 11 12 11z" fill="var(--leaf)"/>
+                <path d="M12 11v5" stroke="var(--leaf)" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>`,
+            seeds: `<svg class="prefab-icon" width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-labelledby="title-seeds" role="img">
+                <title id="title-seeds">Semillas de temporada</title>
+                <style>
+                    :root{
+                        --seed:#A1723D;
+                        --grain:#5A3821;
+                    }
+                </style>
+                <!-- tres semillas -->
+                <ellipse cx="9" cy="10" rx="2" ry="3" fill="var(--seed)" stroke="var(--grain)" stroke-width="1"/>
+                <ellipse cx="14" cy="13" rx="2" ry="3" fill="var(--seed)" stroke="var(--grain)" stroke-width="1"/>
+                <ellipse cx="11" cy="17" rx="2" ry="3" fill="var(--seed)" stroke="var(--grain)" stroke-width="1"/>
+                <!-- líneas de caída -->
+                <path d="M9 7c-.3-1-.6-2-1-3" stroke="var(--grain)" stroke-width="1" stroke-linecap="round"/>
+                <path d="M14 10c.4-1 .7-2 1-3" stroke="var(--grain)" stroke-width="1" stroke-linecap="round"/>
+            </svg>`,
+            tools: `<svg class="prefab-icon" viewBox="0 0 24 24" fill="none" stroke="#8b4513" stroke-width="2">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-3.77 3.77a1 1 0 0 1-1.4 0l-1.6-1.6a1 1 0 0 1 0-1.4l3.77-3.77a6 6 0 0 1 7.94-7.94l3.77 3.77z"/>
+            </svg>`,
+            medicine: `<svg class="prefab-icon" viewBox="0 0 24 24" fill="none" stroke="#8b4513" stroke-width="2">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7z"/>
+                <path d="M12 5l-1 1-2-2"/>
+                <path d="M12 5l1 1 2-2"/>
+            </svg>`,
+            electricity: `<svg class="prefab-icon" viewBox="0 0 24 24" fill="none" stroke="#8b4513" stroke-width="2">
+                <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"/>
+            </svg>`
+        };
+
+        // Generar las tarjetas del carrusel
+        function generateCarouselCards() {
+            const track = document.getElementById('carousel-track');
+            const dots = document.getElementById('carousel-dots');
+            
+            if (!track || !dots) return;
+
+            // Limpiar contenido existente
+            track.innerHTML = '';
+            dots.innerHTML = '';
+
+            // Generar tarjetas
+            Object.entries(PREFABS).forEach(([key, prefab]) => {
+                const xlm = Math.ceil(prefab.clp / CONFIG.xlmToClpRate);
+                const card = document.createElement('div');
+                card.className = 'carousel-card';
+                card.innerHTML = `
+                    <div>
+                        ${SVG_ICONS[prefab.icon] || ''}
+                        <h4 style="margin: 10px 0; color: #2d5016;">${prefab.title}</h4>
+                        <div class="info-item">
+                            <div class="info-label">Presupuesto</div>
+                            <div class="info-value">$${formatClp(prefab.clp)} CLP (≈ ${xlm} XLM)</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Vence</div>
+                            <div class="info-value">${prefab.months} mes(es) desde hoy</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="createPrefab('${key}')" style="margin-top: auto;">
+                        🌱 Crear cooperativa
+                    </button>
+                `;
+                track.appendChild(card);
+            });
+
+            // Generar puntos de navegación
+            const totalSlides = Math.ceil(Object.keys(PREFABS).length / cardsPerSlide);
+            for (let i = 0; i < totalSlides; i++) {
+                const dot = document.createElement('div');
+                dot.className = `carousel-dot ${i === 0 ? 'active' : ''}`;
+                dot.onclick = () => goToSlide(i);
+                dots.appendChild(dot);
+            }
+
+            updateCarousel();
+        }
+
+        // Mover carrusel
+        function moveCarousel(direction) {
+            const totalSlides = Math.ceil(Object.keys(PREFABS).length / cardsPerSlide);
+            currentSlide += direction;
+            
+            if (currentSlide < 0) {
+                currentSlide = totalSlides - 1;
+            } else if (currentSlide >= totalSlides) {
+                currentSlide = 0;
+            }
+            
+            updateCarousel();
+        }
+
+        // Ir a slide específico
+        function goToSlide(slideIndex) {
+            currentSlide = slideIndex;
+            updateCarousel();
+        }
+
+        // Actualizar carrusel
+        function updateCarousel() {
+            const track = document.getElementById('carousel-track');
+            const dots = document.querySelectorAll('.carousel-dot');
+            
+            if (!track) return;
+
+            const translateX = -currentSlide * (100 / cardsPerSlide);
+            track.style.transform = `translateX(${translateX}%)`;
+
+            // Actualizar puntos activos
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+        }
+
+        // Elementos DOM
+        const statusIndicator = () => document.getElementById('status-indicator');
+        const connectBtn = () => document.getElementById('connect-btn');
+        const disconnectBtn = () => document.getElementById('disconnect-btn');
+        const walletInfo = () => document.getElementById('wallet-info');
+        const walletAddressPanel = () => document.getElementById('wallet-address-panel');
+        const userAddressSpan = () => document.getElementById('user-address');
+        const networkNameSpan = () => document.getElementById('network-name');
+        const connectionStatusSpan = () => document.getElementById('connection-status');
+        
+        // Referencias para el nuevo panel de dirección
+        const fullAddressSpan = () => document.getElementById('full-address');
+        const shortAddressSpan = () => document.getElementById('short-address');
+        const networkBadgeSpan = () => document.getElementById('network-badge');
+        const connectionTextSpan = () => document.getElementById('connection-text');
+
+        // Inicializar aplicación
+        async function init() {
+            console.log('🚀 Inicializando dApp...');
+            server = new StellarSdk.SorobanRpc.Server(CONFIG.rpcUrl);
+            
+            // Cargar hash de transacción desde localStorage
+            loadLastTransaction();
+            
+            // Habilitar botón de cargar pools (no requiere wallet)
+            enableLoadPoolsButton();
+            
+            // Pintar snapshot rápido mientras llega la red (deshabilitado para evitar datos viejos)
+            const SHOW_SNAPSHOT = true; // o true si lo quieres
+            if (SHOW_SNAPSHOT) {
+                try {
+                    const raw = localStorage.getItem('pools_snapshot');
+                    if (raw) {
+                        const cached = JSON.parse(raw);
+                        const container = document.getElementById('pools-list');
+                        if (container) container.innerHTML = '';
+                        for (const pool of cached) {
+                            renderPoolCard(Number(pool.id), pool, pool.status);
+                            rememberActivePool(pool);
+                            scheduleDeadlineWatcher(pool.id, pool.deadline);
+                        }
+                        refreshContribDropdownFromCache();
+                    }
+                } catch(_) {}
+            }
+
+            // 🔸 Auto-sana el backend desde el snapshot local
+            try { await selfHealBackendFromSnapshot(); } catch(e) { console.warn('No se pudo auto-sanar el backend:', e); }
+            
+            // Esperar a que se carguen los scripts y verificar disponibilidad
+            let retries = 0;
+            const maxRetries = 10;
+            
+            while (retries < maxRetries) {
+                if (typeof StellarSdk !== 'undefined') {
+                    console.log('✅ Stellar SDK cargado');
+                    break;
+                }
+                await new Promise(resolve => setTimeout(resolve, 500));
+                retries++;
+            }
+            
+            if (retries >= maxRetries) {
+                showAlert('❌ Error: No se pudo cargar Stellar SDK', 'danger');
+                return;
+            }
+            
+            // Mostrar estado inicial mientras verificamos Freighter
+            statusIndicator().textContent = '🔄 Verificando Freighter...';
+            statusIndicator().className = 'status-indicator status-loading';
+            
+            // Verificar Freighter (esto incluye su propio updateUI al final)
+            await checkFreighterAvailability();
+            
+            // 🔸 Cargar automáticamente las pools públicas al abrir la dApp (después de detectar Freighter)
+            try { await loadActivePools(); } catch(e) { console.warn('No se pudieron cargar pools al iniciar:', e); }
+        }
+
+        // Verificar disponibilidad de Freighter usando la API oficial importada
+        async function checkFreighterAvailability() {
+            console.log('🔍 Verificando Freighter usando API oficial importada...');
+            
+            // Esperar a que el módulo ES6 se cargue
+            const waitForFreighterAPI = () => {
+                return new Promise((resolve) => {
+                    // Si ya está disponible
+                    if (window.freighterApi) {
+                        console.log('✅ Freighter API ya disponible');
+                        resolve(true);
+                        return;
+                    }
+                    
+                    // Escuchar evento de carga del módulo
+                    const handleFreighterReady = () => {
+                        console.log('✅ Freighter API cargado desde módulo ES6');
+                        window.removeEventListener('freighter-ready', handleFreighterReady);
+                        resolve(true);
+                    };
+                    
+                    window.addEventListener('freighter-ready', handleFreighterReady);
+                    
+                    // Timeout después de 5 segundos
+                    setTimeout(() => {
+                        window.removeEventListener('freighter-ready', handleFreighterReady);
+                        console.log('❌ Timeout esperando Freighter API');
+                        resolve(false);
+                    }, 5000);
+                });
+            };
+            
+            const apiLoaded = await waitForFreighterAPI();
+            
+            if (apiLoaded && window.freighterApi) {
+                console.log('✅ Freighter API detectado correctamente');
+                
+                // Normalizar API
+                window.freighter = window.freighterApi;
+                
+                await handleFreighterDetected();
+                return;
+            }
+            
+            // Si no se cargó la API, mostrar error específico
+            console.log('❌ Freighter API no se pudo cargar');
+            console.log('💡 Posibles causas:');
+            console.log('   - Problema de red (CDN no disponible)');
+            console.log('   - Navegador no soporta ES6 modules');
+            console.log('   - Bloqueador de contenido bloqueando el CDN');
+            console.log('   - Extensión Freighter no instalada');
+            
+            handleFreighterNotFound();
+        }
+
+        // Manejar Freighter detectado
+        async function handleFreighterDetected() {
+            try {
+                isFreighterAvailable = true;
+                console.log('🎉 Freighter confirmado como disponible');
+                
+                // Verificar métodos disponibles
+                
+                // Verificar si hay una conexión existente
+                let isConnectedResult = false;
+                try {
+                    isConnectedResult = await window.freighter.isConnected();
+                } catch (e) {
+                    console.log('⚠️ No se pudo verificar estado de conexión:', e.message);
+                }
+                
+                if (isConnectedResult) {
+                    try {
+                        // Intentar obtener la clave pública de diferentes maneras
+                        let publicKey = null;
+                        
+                        try {
+                            // Intentar getAddress() primero (más ligero)
+                            const addressResult = await window.freighter.getAddress();
+                            
+                            if (addressResult && !addressResult.error && addressResult.address) {
+                                userAddress = addressResult.address;
+                                isConnected = true;
+                                showAlert('✅ Freighter conectado automáticamente', 'success');
+                                await updateNetworkInfo();
+                            } else {
+                                // Si getAddress() no funciona, intentar requestAccess()
+                                const accessResult = await window.freighter.requestAccess();
+                                
+                                if (accessResult && !accessResult.error && accessResult.address) {
+                                    userAddress = accessResult.address;
+                                    isConnected = true;
+                                    showAlert('✅ Freighter conectado automáticamente', 'success');
+                                    await updateNetworkInfo();
+                                } else {
+                                    showAlert('💡 Freighter detectado. Haz clic en "Conectar" para continuar.', 'info');
+                                }
+                            }
+                        } catch (e) {
+                            console.log('⚠️ Error obteniendo dirección:', e.message);
+                            showAlert('💡 Freighter detectado. Haz clic en "Conectar" para continuar.', 'info');
+                        }
+                    } catch (pkError) {
+                        console.log('⚠️ No hay clave pública disponible, requiere conexión manual:', pkError.message);
+                        showAlert('💡 Freighter detectado. Haz clic en "Conectar" para continuar.', 'info');
+                    }
+                } else {
+                    showAlert('💡 Freighter detectado. Haz clic en "Conectar" para continuar.', 'info');
+                }
+            } catch (error) {
+                console.error('Error manejando Freighter detectado:', error);
+                showAlert('⚠️ Freighter detectado pero con errores: ' + error.message, 'danger');
+                // Aún así, marcar como disponible para permitir intentos de conexión
+                isFreighterAvailable = true;
+            } finally {
+                updateUI();
+            }
+        }
+
+        // Manejar Freighter no encontrado
+        function handleFreighterNotFound() {
+            isFreighterAvailable = false;
+            
+            // Mostrar mensaje específico para el problema de inyección
+            const isChrome = navigator.userAgent.includes('Chrome');
+            let message = '❌ Freighter no se está inyectando correctamente.';
+            
+            if (isChrome) {
+                message += '\n\n🔧 Soluciones para Chrome:';
+                message += '\n1. Verifica que Freighter esté habilitado en chrome://extensions/';
+                message += '\n2. Asegúrate de que "Permitir en modo incógnito" esté activado si usas incógnito';
+                message += '\n3. Recarga la extensión (toggle off/on)';
+                message += '\n4. Reinicia Chrome completamente';
+                message += '\n5. Si el problema persiste, reinstala Freighter';
+            }
+            
+            showAlert(message, 'danger');
+            
+            // Mostrar botones de acción
+            document.getElementById('retry-btn').style.display = 'inline-block';
+            
+            const connectButton = connectBtn();
+            connectButton.textContent = isChrome ? 'Abrir Extensiones Chrome' : 'Instalar Freighter';
+            connectButton.disabled = false;
+            connectButton.onclick = () => {
+                if (isChrome) {
+                    // Abrir página de extensiones de Chrome
+                    window.open('chrome://extensions/', '_blank');
+                    showAlert('ℹ️ Verifica que Freighter esté habilitado, luego usa "Reintentar Detección".', 'info');
+                } else {
+                    window.open('https://freighter.app/', '_blank');
+                    showAlert('ℹ️ Después de instalar Freighter, usa "Reintentar Detección".', 'info');
+                }
+            };
+            
+            updateUI();
+        }
+
+        // Función para reintentar la detección de Freighter
+        async function retryFreighterDetection() {
+            showAlert('🔄 Reintentando detección de Freighter...', 'info');
+            
+            // Resetear estado
+            document.getElementById('retry-btn').style.display = 'none';
+            statusIndicator().textContent = '🔄 Verificando Freighter...';
+            statusIndicator().className = 'status-indicator status-loading';
+            
+            // Reintentar detección
+            await checkFreighterAvailability();
+        }
+
+        // Conectar wallet usando la API oficial correcta
+        async function connectWallet() {
+            if (!isFreighterAvailable) {
+                showAlert('❌ Freighter no está disponible', 'danger');
+                return;
+            }
+
+            try {
+                statusIndicator().textContent = '🔄 Conectando...';
+                statusIndicator().className = 'status-indicator status-loading';
+                connectBtn().disabled = true;
+
+                console.log('🔄 Conectando con Freighter usando API oficial...');
+                
+                // Usar requestAccess() según la documentación oficial
+                // requestAccess() -> Promise<{ address: string } & { error?: string }>
+                console.log('🔑 Llamando a requestAccess()...');
+                const accessResult = await window.freighter.requestAccess();
+                console.log('🔑 requestAccess() resultado:', accessResult);
+                
+                // Verificar si hay error
+                if (accessResult.error) {
+                    throw new Error(accessResult.error);
+                }
+                
+                // Obtener la dirección del resultado
+                if (!accessResult.address || typeof accessResult.address !== 'string') {
+                    throw new Error('No se recibió una dirección válida de Freighter');
+                }
+                
+                // Guardar la dirección
+                userAddress = accessResult.address;
+                isConnected = true;
+                
+                console.log('✅ Wallet conectada exitosamente');
+                console.log('📍 Dirección:', userAddress);
+                
+                // Actualizar información de red
+                await updateNetworkInfo();
+                
+                // Mostrar éxito
+                showAlert('✅ Wallet conectada exitosamente', 'success');
+                
+            } catch (error) {
+                console.error('❌ Error conectando wallet:', error);
+                showAlert('❌ Error al conectar: ' + error.message, 'danger');
+                isConnected = false;
+                userAddress = null;
+            } finally {
+                connectBtn().disabled = false;
+                updateUI();
+            }
+        }
+
+        // Desconectar wallet
+        function disconnectWallet() {
+            console.log('🚪 Desconectando wallet...');
+            isConnected = false;
+            userAddress = null;
+            showAlert('ℹ️ Wallet desconectada', 'info');
+
+            const connectButton = connectBtn();
+            if (connectButton) {
+                connectButton.disabled = false;
+                connectButton.textContent = '🌾 Conectar';
+            }
+
+            // Limpiar watchers de deadline al desconectar
+            clearAllDeadlineTimers();
+
+            updateUI(); // ← con las protecciones nuevas ya no revienta
+        }
+
+        // Actualizar información de red usando la API oficial
+        async function updateNetworkInfo() {
+            if (!isConnected || !userAddress) return;
+
+            try {
+                console.log('🌐 Obteniendo información de red...');
+                const nd = await window.freighter.getNetworkDetails();
+                console.log('🌐 getNetworkDetails() resultado:', nd);
+                if (nd.error) throw new Error(nd.error);
+
+                const networkName = nd.network || 'Testnet (por defecto)';
+
+                // 👇 Solo actualiza si existen:
+                const networkNameEl  = document.getElementById('network-name');
+                const networkBadgeEl = document.getElementById('network-badge');
+                if (networkNameEl)  networkNameEl.textContent  = networkName;
+                if (networkBadgeEl) networkBadgeEl.textContent = networkName;
+
+                console.log('📝 Passphrase:', nd.networkPassphrase);
+                console.log('🔗 Soroban RPC:', nd.sorobanRpcUrl);
+                console.log('✅ Información de red actualizada correctamente');
+            } catch (err) {
+                console.error('❌ Error obteniendo información de red:', err);
+
+                // Valores por defecto, pero solo si existen
+                const networkNameEl  = document.getElementById('network-name');
+                const networkBadgeEl = document.getElementById('network-badge');
+                if (networkNameEl)  networkNameEl.textContent  = 'Testnet (por defecto)';
+                if (networkBadgeEl) networkBadgeEl.textContent = 'Testnet (por defecto)';
+            }
+        }
+
+        // Obtener información detallada de la red
+        async function getNetworkInfo() {
+            if (!isConnected) {
+                showAlert('❌ Conecta la wallet primero', 'danger');
+                return;
+            }
+
+            try {
+                console.log('🌐 Obteniendo información detallada de la red...');
+                
+                // Usar getNetworkDetails() según la documentación oficial
+                const networkDetails = await window.freighter.getNetworkDetails();
+                console.log('🌐 getNetworkDetails() resultado:', networkDetails);
+                
+                if (networkDetails.error) {
+                    throw new Error(networkDetails.error);
+                }
+
+                const info = `
+                    Red: ${networkDetails.network}
+                    URL: ${networkDetails.networkUrl}
+                    Passphrase: ${networkDetails.networkPassphrase}
+                    ${networkDetails.sorobanRpcUrl ? 'Soroban RPC: ' + networkDetails.sorobanRpcUrl : ''}
+                `;
+                
+                console.log('✅ Información de red obtenida:', info);
+                showAlert('📡 Información de red:\n' + info, 'info');
+                
+            } catch (error) {
+                console.error('❌ Error obteniendo información de red:', error);
+                
+                // Usar valores por defecto en caso de error
+                let info = `Red: Testnet (por defecto)\n`;
+                info += `Passphrase: ${CONFIG.networkPassphrase}\n`;
+                info += `Soroban RPC: ${CONFIG.rpcUrl}`;
+                showAlert('📡 Información de red:\n' + info, 'info');
+            }
+        }
+
+        // Firmar mensaje de prueba usando la API oficial
+        async function signTestMessage() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet primero', 'danger');
+                return;
+            }
+
+            try {
+                console.log('✍️ Iniciando prueba de firma...');
+                
+                const message = 'Compra Colectiva - Mensaje de prueba desde la dApp';
+                console.log('📝 Mensaje a firmar:', message);
+                
+                // Usar signMessage() según la documentación oficial
+                // signMessage(message: string, opts: { address: string }) -> Promise<{ signedMessage: string | null; signerAddress: string; } & { error?: string; }>
+                const signResult = await window.freighter.signMessage(message, {
+                    address: userAddress
+                });
+                
+                console.log('✍️ signMessage() resultado:', signResult);
+                
+                if (signResult.error) {
+                    throw new Error(signResult.error);
+                }
+                
+                if (!signResult.signedMessage) {
+                    throw new Error('No se recibió un mensaje firmado');
+                }
+
+                console.log('✅ Mensaje firmado exitosamente');
+                console.log('🔐 Mensaje firmado:', signResult.signedMessage);
+                console.log('👤 Firmado por:', signResult.signerAddress);
+                
+                showAlert('✅ Mensaje firmado correctamente', 'success');
+                
+            } catch (error) {
+                console.error('❌ Error firmando mensaje:', error);
+                showAlert('❌ Error firmando: ' + error.message, 'danger');
+            }
+        }
+
+        // Función para copiar la dirección al portapapeles
+        async function copyAddress() {
+            if (!userAddress) {
+                showAlert('❌ No hay dirección para copiar', 'danger');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(userAddress);
+                showAlert('✅ Dirección copiada al portapapeles', 'success');
+                
+                // Cambiar temporalmente el ícono del elemento clickeable
+                const addressDisplay = document.getElementById('wallet-address-display');
+                if (addressDisplay) {
+                    const originalText = addressDisplay.textContent;
+                    addressDisplay.textContent = '✅ Copiado!';
+                    addressDisplay.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                    
+                    setTimeout(() => {
+                        addressDisplay.textContent = originalText;
+                        addressDisplay.style.background = 'linear-gradient(135deg, #2d5016 0%, #4a7c59 100%)';
+                    }, 2000);
+                }
+                
+            } catch (error) {
+                console.error('Error copiando dirección:', error);
+                showAlert('❌ Error al copiar la dirección', 'danger');
+            }
+        }
+
+        // Actualizar interfaz de usuario
+        function updateUI() {
+            console.log('🔄 Actualizando UI - isConnected:', isConnected, 'userAddress:', userAddress, 'isFreighterAvailable:', isFreighterAvailable);
+            
+            const indicator = statusIndicator();
+            const connectButton = connectBtn();
+            const disconnectButton = disconnectBtn();
+            
+            // ⚠️ Estos pueden no existir en tu layout actual:
+            const walletInfoDiv = document.getElementById('wallet-info');
+            const walletAddressPanelDiv = document.getElementById('wallet-address-panel');
+            const userAddrSpan = document.getElementById('user-address');
+            const connStatusSpan = document.getElementById('connection-status');
+            
+            const walletConnectState = document.getElementById('wallet-connect-state');
+            const walletConnectedState = document.getElementById('wallet-connected-state');
+            const walletLoadingState = document.getElementById('wallet-loading-state');
+            const walletAddressShort = document.getElementById('wallet-address-short');
+
+            if (isConnected && userAddress) {
+                indicator.textContent = '✅ Conectado';
+                indicator.className = 'status-indicator status-connected';
+
+                if (walletLoadingState) walletLoadingState.style.display = 'none';
+                if (walletConnectState) walletConnectState.style.display = 'none';
+                if (walletConnectedState) walletConnectedState.style.display = 'flex';
+
+                if (walletAddressShort && typeof userAddress === 'string') {
+                    walletAddressShort.textContent = `${userAddress.slice(0,8)}...${userAddress.slice(-8)}`;
+                }
+
+                if (connectButton) connectButton.style.display = 'none';
+                if (disconnectButton) disconnectButton.style.display = 'inline-block';
+
+                // 👇 Solo si existen en el DOM:
+                if (walletAddressPanelDiv) walletAddressPanelDiv.style.display = 'block';
+                if (walletInfoDiv) walletInfoDiv.style.display = 'none';
+                if (userAddrSpan) userAddrSpan.textContent = `${userAddress.slice(0,8)}...${userAddress.slice(-8)}`;
+                if (connStatusSpan) connStatusSpan.textContent = 'Conectado';
+
+                enableActionButtons();
+                
+            } else if (isFreighterAvailable) {
+                indicator.textContent = '❌ Desconectado';
+                indicator.className = 'status-indicator status-disconnected';
+
+                if (walletLoadingState) walletLoadingState.style.display = 'none';
+                if (walletConnectedState) walletConnectedState.style.display = 'none';
+                if (walletConnectState) walletConnectState.style.display = 'flex';
+
+                if (connectButton) {
+                    connectButton.style.display = 'inline-block';
+                    connectButton.disabled = false;
+                    connectButton.textContent = '🌾 Conectar';
+                }
+                if (disconnectButton) disconnectButton.style.display = 'none';
+
+                if (walletAddressPanelDiv) walletAddressPanelDiv.style.display = 'none';
+                if (walletInfoDiv) walletInfoDiv.style.display = 'none';
+                if (userAddrSpan) userAddrSpan.textContent = 'No disponible';
+                if (connStatusSpan) connStatusSpan.textContent = 'Desconectado';
+
+                disableActionButtons();
+                
+            } else {
+                indicator.textContent = '🔄 Verificando...';
+                indicator.className = 'status-indicator status-loading';
+
+                if (walletConnectState) walletConnectState.style.display = 'none';
+                if (walletConnectedState) walletConnectedState.style.display = 'none';
+                if (walletLoadingState) walletLoadingState.style.display = 'flex';
+
+                if (connectButton) {
+                    connectButton.style.display = 'inline-block';
+                    connectButton.disabled = true;
+                    connectButton.textContent = 'Instalar Freighter';
+                }
+                if (disconnectButton) disconnectButton.style.display = 'none';
+
+                if (walletAddressPanelDiv) walletAddressPanelDiv.style.display = 'none';
+                if (walletInfoDiv) walletInfoDiv.style.display = 'none';
+                if (userAddrSpan) userAddrSpan.textContent = 'No disponible';
+                if (connStatusSpan) connStatusSpan.textContent = 'No disponible';
+
+                disableActionButtons();
+            }
+        }
+
+        // Habilitar botones de acción (requieren wallet)
+        function enableActionButtons() {
+            const buttons = ['create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = false;
+            });
+        }
+
+        // Deshabilitar botones de acción (requieren wallet)
+        function disableActionButtons() {
+            const buttons = ['create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = true;
+            });
+        }
+
+        // Habilitar botón de cargar pools (no requiere wallet)
+        function enableLoadPoolsButton() {
+            const btn = document.getElementById('load-pools-btn');
+            if (btn) btn.disabled = false;
+        }
+
+        // Función para enviar logs al servidor
+        async function sendLogToServer(level, message, data = null, operation = null) {
+            try {
+                await fetch('/api/log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        level,
+                        message,
+                        data,
+                        operation
+                    })
+                });
+            } catch (error) {
+                console.warn('No se pudo enviar log al servidor:', error);
+            }
+        }
+
+        // Función para enviar logs de transacciones al servidor
+        async function sendTransactionLog(operation, details, status, error = null) {
+            try {
+                await fetch('/api/log-transaction', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        operation,
+                        details,
+                        status,
+                        error
+                    })
+                });
+            } catch (err) {
+                console.warn('No se pudo enviar log de transacción:', err);
+            }
+        }
+
+        // Función para enviar logs de errores al servidor
+        async function sendErrorLog(error, context, stack = null) {
+            try {
+                await fetch('/api/log-error', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        error: error.message || error,
+                        context,
+                        stack
+                    })
+                });
+            } catch (err) {
+                console.warn('No se pudo enviar log de error:', err);
+            }
+        }
+
+        // Mostrar alertas
+        function showAlert(message, type = 'info') {
+            const alertsDiv = document.getElementById('alerts');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.style.whiteSpace = 'pre-line'; // Para mostrar saltos de línea
+            alertDiv.textContent = message;
+            alertsDiv.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 8000);
+        }
+
+        // === FUNCIONES DE POOL (STUBS) ===
+
+
+        // Verificar conectividad con el contrato
+        async function verifyContractConnection() {
+            try {
+                console.log('🔍 Verificando conectividad con el contrato...');
+                const account = await server.getAccount(userAddress);
+                
+                // Intentar una consulta simple al contrato usando get_pool
+                const testTransaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(
+                    StellarSdk.Operation.invokeContractFunction({
+                        contract: CONFIG.contractId,
+                        function: 'get_pool', // Función que existe
+                        args: [StellarSdk.nativeToScVal(1, { type: 'u32' })]
+                    })
+                )
+                .setTimeout(30)
+                .build();
+
+                // Solo simular la transacción, no enviarla
+                const simulation = await server.simulateTransaction(testTransaction);
+                console.log('✅ Contrato accesible:', simulation);
+                return simulation; // Return the full simulation result
+            } catch (error) {
+                console.warn('⚠️ No se pudo verificar el contrato:', error.message);
+                return { error: error.message }; // Return error object
+            }
+        }
+
+        // Verificar si el contrato está inicializado
+        async function isContractInitialized() {
+            try {
+                console.log('🔍 Verificando si el contrato está inicializado...');
+                const account = await server.getAccount(userAddress);
+                
+                // Intentar simular una operación que requiere inicialización
+                // Usamos get_pool con ID 1 (que debería fallar si no está inicializado)
+                const testTransaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(
+                    StellarSdk.Operation.invokeContractFunction({
+                        contract: CONFIG.contractId,
+                        function: 'get_pool',
+                        args: [StellarSdk.nativeToScVal(1, { type: 'u32' })]
+                    })
+                )
+                .setTimeout(30)
+                .build();
+
+                const simulation = await server.simulateTransaction(testTransaction);
+                
+                // Si hay error con MissingValue, el contrato no está inicializado
+                if (simulation.error && simulation.error.includes('MissingValue')) {
+                    console.log('❌ Contrato NO inicializado (MissingValue detectado)');
+                    return false;
+                }
+                
+                // Si no hay error MissingValue, asumimos que está inicializado
+                console.log('✅ Contrato inicializado correctamente');
+                return true;
+                
+            } catch (error) {
+                console.warn('⚠️ Error verificando inicialización:', error.message);
+                return false;
+            }
+        }
+
+        async function initializeContract() {
+            try {
+                console.log('🔧 Inicializando contrato...');
+                showAlert('🔧 Inicializando contrato...', 'info');
+                
+                const account = await server.getAccount(userAddress);
+                let tx = new StellarSdk.TransactionBuilder(account, { 
+                    fee: StellarSdk.BASE_FEE, 
+                    networkPassphrase: CONFIG.networkPassphrase 
+                })
+                .addOperation(StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'initialize',
+                    args: []
+                }))
+                .setTimeout(60)
+                .build();
+                
+                await server.simulateTransaction(tx);
+                tx = await server.prepareTransaction(tx);
+                
+                const signed = await window.freighter.signTransaction(tx.toXDR(), { 
+                    networkPassphrase: CONFIG.networkPassphrase, 
+                    address: userAddress 
+                });
+                
+                const xdr = signed.signedTxXdr ?? signed.signedXDR;
+                const res = await server.sendTransaction(StellarSdk.TransactionBuilder.fromXDR(xdr, CONFIG.networkPassphrase));
+                
+                if (res.status !== 'SUCCESS') {
+                    throw new Error('initialize falló: ' + res.status);
+                }
+                
+                console.log('✅ Contrato inicializado exitosamente');
+                showAlert('✅ Contrato inicializado exitosamente', 'success');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Error inicializando contrato:', error);
+                showAlert('❌ Error inicializando contrato: ' + error.message, 'danger');
+                return false;
+            }
+        }
+
+        // Inicializar el contrato si es necesario
+
+        // Crear un nuevo pool de compra colectiva
+        async function createPool() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet para crear un pool', 'danger');
+                return;
+            }
+
+            try {
+                // Verificar si el contrato está inicializado
+                showAlert('🔍 Verificando estado del contrato...', 'info');
+                const isInitialized = await isContractInitialized();
+                
+                if (!isInitialized) {
+                    showAlert('🔧 El contrato no está inicializado. Inicializando automáticamente...', 'info');
+                    const initSuccess = await initializeContract();
+                    if (!initSuccess) {
+                        showAlert('❌ No se pudo inicializar el contrato. Intenta nuevamente.', 'danger');
+                        return;
+                    }
+                }
+
+                // Obtener datos del formulario
+                const supplierAddress = document.getElementById('supplier').value.trim();
+                const goalXlm = parseInt(document.getElementById('goal').value);
+                // Parsear fecha de vencimiento desde datetime-local
+                const deadlineStr = (document.getElementById('deadline')?.value || '').trim();
+                if (!deadlineStr) {
+                    showAlert('❌ Selecciona la fecha y hora de vencimiento', 'danger');
+                    return;
+                }
+
+                // Parse robusto de datetime-local como hora local
+                const [datePart, timePart] = deadlineStr.split('T');
+                const [Y, M, D] = datePart.split('-').map(Number);
+                const [h, m] = (timePart || '00:00').split(':').map(Number);
+                const deadline = Math.floor(new Date(Y, M - 1, D, h, m).getTime() / 1000);
+
+                const now = Math.floor(Date.now() / 1000);
+                if (!Number.isFinite(deadline) || deadline <= now) {
+                    showAlert('❌ La fecha de vencimiento debe ser futura', 'danger');
+                    return;
+                }
+
+                // Debug: Log de la dirección obtenida
+                // Validación básica del proveedor
+
+                // Validaciones
+                if (!supplierAddress) {
+                    showAlert('❌ Ingresa la dirección del proveedor', 'danger');
+                    return;
+                }
+
+                if (!goalXlm || goalXlm <= 0) {
+                    showAlert('❌ La meta debe ser mayor a 0 XLM', 'danger');
+                    return;
+                }
+
+
+                // Convertir XLM a stroops (1 XLM = 10,000,000 stroops)
+                const goalStroops = BigInt(goalXlm * 10000000);
+                
+                
+                // Validar longitud de la dirección (debe ser exactamente 56 caracteres)
+                if (supplierAddress.length !== 56) {
+                    showAlert(`❌ La dirección debe tener exactamente 56 caracteres. Tienes: ${supplierAddress.length}`, 'danger');
+                    return;
+                }
+
+                // Validar formato de la dirección
+                if (!supplierAddress.startsWith('G')) {
+                    showAlert('❌ La dirección debe empezar con "G"', 'danger');
+                    return;
+                }
+
+                // Validar que sea una dirección Stellar válida
+                if (!StellarSdk.StrKey.isValidEd25519PublicKey(supplierAddress)) {
+                    showAlert('❌ La dirección del proveedor no es válida. Debe ser una dirección Stellar válida', 'danger');
+                    return;
+                }
+                
+                // Verificar que la dirección sea diferente a la del usuario
+                if (supplierAddress === userAddress) {
+                    showAlert('❌ No puedes ser tu propio proveedor', 'danger');
+                    return;
+                }
+
+                console.log('🏗️ Creando pool...');
+                console.log('📍 Proveedor:', supplierAddress);
+                console.log('🎯 Meta:', goalXlm, 'XLM');
+                console.log('⏰ Deadline:', new Date(deadline * 1000).toLocaleString());
+
+                // Mostrar panel de proceso
+                showProcessPanel();
+                setProcessStep(1);
+                updateProcessStatus('Creando transacción...');
+
+                // Enviar log al servidor
+                await sendLogToServer('info', 'Iniciando creación de pool', {
+                    supplier: supplierAddress,
+                    goal: goalXlm,
+                    deadline: new Date(deadline * 1000).toISOString(),
+                    contractId: CONFIG.contractId,
+                    tokenId: CONFIG.tokenId
+                }, 'CREATE_POOL');
+
+                // Crear transacción para invocar el contrato
+                let account;
+                try {
+                    account = await server.getAccount(userAddress);
+                } catch (accountError) {
+                    console.error('❌ Error obteniendo cuenta:', accountError);
+                    throw new Error('No se pudo obtener información de la cuenta. Verifica que la wallet tenga fondos suficientes.');
+                }
+                
+                // Crear addresses necesarios
+                let creatorAddress = StellarSdk.Address.fromString(userAddress);
+                
+                let tokenAddress = StellarSdk.Address.fromString(CONFIG.tokenId);
+                let supplierAddressObj = StellarSdk.Address.fromString(supplierAddress);
+                
+                const goalScVal = StellarSdk.nativeToScVal(goalStroops, { type: 'i128' });
+                const deadlineScVal = StellarSdk.nativeToScVal(deadline, { type: 'u64' });
+                
+                // Convertir addresses a ScVal
+                const creatorScVal = StellarSdk.nativeToScVal(creatorAddress, { type: 'address' });
+                const tokenScVal = StellarSdk.nativeToScVal(tokenAddress, { type: 'address' });
+                const supplierScVal = StellarSdk.nativeToScVal(supplierAddressObj, { type: 'address' });
+                
+                console.log('📝 Argumentos preparados:');
+                console.log('  - Creator:', userAddress);
+                console.log('  - Token:', CONFIG.tokenId);
+                console.log('  - Supplier:', supplierAddress);
+                console.log('  - Goal:', goalXlm, 'XLM');
+                console.log('  - Deadline:', new Date(deadline * 1000).toLocaleString());
+                
+                // Debug: Verificar tipos de argumentos
+                console.log('🔍 Verificando tipos de argumentos:');
+                console.log('  - creatorScVal:', creatorScVal);
+                console.log('  - tokenScVal:', tokenScVal);
+                console.log('  - supplierScVal:', supplierScVal);
+                console.log('  - goalScVal:', goalScVal);
+                console.log('  - deadlineScVal:', deadlineScVal);
+                
+                console.log('🔨 Construyendo transacción...');
+                
+                // 1) Construir operación
+                const operation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'create_pool',
+                    args: [
+                        creatorScVal,  // creator: Address
+                        tokenScVal,    // token: Address
+                        supplierScVal, // supplier: Address
+                        goalScVal,     // goal: i128
+                        deadlineScVal  // deadline: u64
+                    ]
+                });
+
+                // 2) Armar transacción base
+                let transaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(operation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
+                .build();
+
+                console.log('✅ Transacción construida exitosamente');
+
+                // 3) Simular y preparar (footprint + resource fee + auth)
+                console.log('🔍 Simulando transacción...');
+                const simulation = await server.simulateTransaction(transaction);
+                console.log('📊 Simulación:', simulation);
+                
+                if (simulation.error) {
+                    throw new Error('Error en simulación: ' + simulation.error);
+                }
+
+                console.log('🔧 Preparando transacción...');
+                transaction = await server.prepareTransaction(transaction);
+                console.log('✅ Transacción preparada con footprint y autorización');
+
+                console.log('✍️ Firmando transacción...');
+                
+                // Actualizar estado visual
+                setProcessStep(2);
+                updateProcessStatus('Firmando con Freighter...');
+                
+                await sendLogToServer('info', 'Firmando transacción con Freighter', null, 'CREATE_POOL');
+                
+                const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress  // unifica: usa 'address' para ser consistente
+                });
+
+                if (signedTransaction.error) {
+                    console.error('❌ Error de Freighter:', signedTransaction.error);
+                    await sendErrorLog(signedTransaction.error, 'Error firmando transacción', null);
+                    
+                    let errorMessage = 'Error firmando transacción';
+                    if (typeof signedTransaction.error === 'string') {
+                        errorMessage = signedTransaction.error;
+                    } else if (signedTransaction.error.message) {
+                        errorMessage = signedTransaction.error.message;
+                    } else {
+                        errorMessage = JSON.stringify(signedTransaction.error);
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+
+                console.log('📤 Enviando transacción...');
+                
+                // Actualizar estado visual
+                setProcessStep(3);
+                updateProcessStatus('Enviando a la red...');
+                
+                // 4) Enviar - usar fallback para ambas variantes de Freighter
+                const signedXdr = signedTransaction.signedTxXdr ?? signedTransaction.signedXDR;
+                if (!signedXdr) {
+                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
+                }
+                
+                const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    signedXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                const response = await server.sendTransaction(transactionToSubmit);
+                console.log('📊 Respuesta completa:', response);
+                console.log('📊 Status:', response.status);
+
+                if (response.status === 'SUCCESS') {
+                    // Actualizar estado visual
+                    setProcessStep(5);
+                    updateProcessStatus('Procesando resultado...', false);
+                    
+                    // Obtener poolId usando getPoolIdFromTx como método principal
+                    const poolId = await getPoolIdFromTx(response.hash);
+                    
+                    await sendTransactionLog('CREATE_POOL', {
+                        poolId: poolId,
+                        supplier: supplierAddress,
+                        goal: goalXlm,
+                        deadline: new Date(deadline * 1000).toISOString()
+                    }, 'success');
+                    
+                    showAlert(`✅ Pool creado exitosamente! ID: ${poolId}`, 'success');
+                    
+                    // Cargar información del pool recién creado
+                    if (poolId) {
+                        const info = await getPoolInfo(poolId);         // 👉 devuelve { pool, status }
+                        if (!info || !info.pool) return;
+
+                        const pool = info.pool;
+
+                        // Recordar y refrescar UI
+                        rememberActivePool(pool);
+                        refreshContribDropdownFromCache();
+
+                        // Persistir en backend (archivo data/pools_state.json)
+                        try {
+                            await fetch('/api/pools/register', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ pool: normalizePoolForBackend(pool) }, jsonBigIntReplacer)
+                            });
+                        } catch (_) {}
+
+                        // Guardar snapshot local coherente
+                        try {
+                            const raw = localStorage.getItem('pools_snapshot');
+                            const list = raw ? JSON.parse(raw) : [];
+                            const without = list.filter(p => String(p.id) !== String(pool.id));
+                            const normalized = { ...normalizePoolForBackend(pool), status: info.status || 'active' };
+                            without.push(normalized);
+                            localStorage.setItem('pools_snapshot', JSON.stringify(without, jsonBigIntReplacer));
+                        } catch (_) {}
+                    }
+                    
+                    // Limpiar formulario y ocultar panel
+                    document.getElementById('supplier').value = '';
+                    document.getElementById('goal').value = '100';
+                    // Reset fecha de vencimiento a +30 días
+                    const dft = new Date(); 
+                    dft.setDate(dft.getDate() + 30);
+                    const defStr = formatLocalDatetime(dft);
+                    const dlEl = document.getElementById('deadline');
+                    if (dlEl) dlEl.value = defStr;
+                    hideProcessPanel();
+                    
+                } else if (response.status === 'PENDING') {
+                    // Actualizar estado visual
+                    setProcessStep(4);
+                    updateProcessStatus('Esperando confirmación...');
+                    showProcessHash(response.hash);
+                    
+                    // Almacenar hash para verificación posterior
+                    storeLastTransaction(response.hash);
+                    showAlert(`⏳ Transacción pendiente\nHash: ${response.hash}\nEsperando confirmación...`, 'info');
+
+                    try {
+                        // Usar watcher automático
+                        const final = await waitForTx(response.hash);
+                        if (final.status === 'SUCCESS') {
+                            // Actualizar estado visual
+                            setProcessStep(5);
+                            updateProcessStatus('¡Pool confirmado!', false);
+                            
+                            showAlert('✅ ¡Pool confirmado on-chain!', 'success');
+                            
+                            // Extraer poolId y cargar información
+                            const poolId = await getPoolIdFromTx(response.hash);
+                            
+                            if (poolId) {
+                                const info = await getPoolInfo(poolId);
+                                if (info && info.pool) {
+                                    const pool = info.pool;
+
+                                    // Registrar en backend
+                                    try {
+                                        await fetch('/api/pools/register', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ pool: normalizePoolForBackend(pool) }, jsonBigIntReplacer)
+                                        });
+                                    } catch (_) {}
+
+                                    // Actualizar snapshot local
+                                    try {
+                                        const raw = localStorage.getItem('pools_snapshot');
+                                        const list = raw ? JSON.parse(raw) : [];
+                                        const without = list.filter(p => String(p.id) !== String(pool.id));
+                                        const normalized = { ...normalizePoolForBackend(pool), status: info.status || 'active' };
+                                        without.push(normalized);
+                                        localStorage.setItem('pools_snapshot', JSON.stringify(without, jsonBigIntReplacer));
+                                    } catch (_) {}
+
+                                    // UI (opcional): recordar y refrescar dropdown
+                                    rememberActivePool(pool);
+                                    refreshContribDropdownFromCache();
+                                }
+                                // Limpiar formulario y ocultar panel
+                                document.getElementById('supplier').value = '';
+                                document.getElementById('goal').value = '100';
+                                // Reset fecha de vencimiento a +30 días
+                    const dft = new Date(); 
+                    dft.setDate(dft.getDate() + 30);
+                    const defStr = formatLocalDatetime(dft);
+                    const dlEl = document.getElementById('deadline');
+                    if (dlEl) dlEl.value = defStr;
+                                setTimeout(() => hideProcessPanel(), 2000);
+                            } else {
+                                showAlert('⚠️ Pool creado pero no se pudo obtener el ID', 'warning');
+                                hideProcessPanel();
+                            }
+                        } else {
+                            updateProcessStatus('Transacción falló', false);
+                            showAlert('❌ La transacción falló', 'danger');
+                            console.error('Detalles del error:', final);
+                            setTimeout(() => hideProcessPanel(), 3000);
+                        }
+                    } catch (e) {
+                        updateProcessStatus('Expiró la espera', false);
+                        showAlert('⌛ Expiró la espera de confirmación', 'warning');
+                        console.error('Error en watcher:', e);
+                        setTimeout(() => hideProcessPanel(), 3000);
+                    }
+                } else {
+                    await sendTransactionLog('CREATE_POOL', {
+                        supplier: supplierAddress,
+                        goal: goalXlm,
+                        deadline: new Date(deadline * 1000).toISOString()
+                    }, 'error', response.status);
+                    
+                    // Mostrar error más específico
+                    let errorMessage = 'La transacción falló: ' + response.status;
+                    if (response.errorResult) {
+                        console.log('❌ Error details:', JSON.stringify(response.errorResult));
+                        errorMessage += '\nDetalles: ' + JSON.stringify(response.errorResult);
+                        
+                        // Analizar tipo de error específico
+                        if (response.errorResult.result && response.errorResult.result._switch) {
+                            const errorType = response.errorResult.result._switch.name;
+                            console.log('🔍 Tipo de error:', errorType);
+                            
+                            if (errorType === 'txMalformed') {
+                                errorMessage += '\n💡 Error: Transacción malformada. Verifica los argumentos del contrato.';
+                            } else if (errorType === 'txFailed') {
+                                errorMessage += '\n💡 Error: Transacción falló. Verifica que el contrato esté inicializado.';
+                            }
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+
+            } catch (error) {
+                console.error('❌ Error creando pool:', error.message);
+                await sendErrorLog(error, 'Error en createPool', error.stack);
+                
+                // Ocultar panel de proceso en caso de error
+                updateProcessStatus('Error en el proceso', false);
+                setTimeout(() => hideProcessPanel(), 3000);
+                
+                let errorMessage = 'Error desconocido';
+                if (error.message) {
+                    errorMessage = error.message;
+                } else if (typeof error === 'string') {
+                    errorMessage = error;
+                } else {
+                    errorMessage = JSON.stringify(error);
+                }
+                
+                showAlert('❌ Error creando pool: ' + errorMessage, 'danger');
+            }
+        }
+
+        // 🔧 Convierte BigInt → string y deja números/strings planos
+        function normalizePoolForBackend(pool) {
+            return {
+                id: Number(pool.id),
+                creator: String(pool.creator),
+                supplier: String(pool.supplier),
+                token: String(pool.token),
+                goal: pool.goal != null ? String(pool.goal) : "0",
+                raised: pool.raised != null ? String(pool.raised) : "0",
+                deadline: Number(pool.deadline),
+                finalized: Boolean(pool.finalized),
+            };
+        }
+
+        // Opcional general: replacer para JSON.stringify en cualquier objeto
+        function jsonBigIntReplacer(_k, v) {
+            return typeof v === 'bigint' ? v.toString() : v;
+        }
+
+        // Lee la pool on-chain y garantiza que el backend la tenga registrada
+        async function ensureServerHasPool(poolId) {
+            // 1) Consulta on-chain (tu función existente que decodifica el struct)
+            const info = await getPoolInfo(poolId); // debe devolver { pool: {...}, status: ... }
+            if (!info || !info.pool) {
+                throw new Error('No se pudo leer el pool on-chain para registrarlo en el backend');
+            }
+
+            // 2) Registra en el backend
+            const plain = normalizePoolForBackend(info.pool);
+            await fetch('/api/pools/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pool: plain }, jsonBigIntReplacer)
+            });
+
+            return info.pool;
+        }
+
+        // Repoblar el backend al arrancar (tras F5)
+        async function selfHealBackendFromSnapshot() {
+            try {
+                const raw = localStorage.getItem('pools_snapshot');
+                const list = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(list) || list.length === 0) return;
+
+                // Verifica una por una; si no está, la registra
+                for (const p of list) {
+                    const id = String(p.id);
+                    const r = await fetch(`/api/pools/${id}`);
+                    if (r.status === 404) {
+                        console.log(`Backend no conoce pool #${id}; registrando...`);
+                        const plain = normalizePoolForBackend(p);
+                        await fetch('/api/pools/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ pool: plain }, jsonBigIntReplacer)
+                        });
+                    }
+                }
+            } catch (e) {
+                console.warn('selfHealBackendFromSnapshot falló:', e);
+            }
+        }
+
+        // Contribuir a un pool existente
+        async function contributeToPool() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet para contribuir', 'danger');
+                return;
+            }
+
+            try {
+                // Obtener datos del formulario
+                const sel = document.getElementById('contrib-pool-select');
+                let poolId = sel && sel.value ? Number(sel.value) : NaN;
+
+                // Fallback (si dejaste el input oculto y quieres permitir pegar manualmente)
+                if (!Number.isFinite(poolId) || poolId <= 0) {
+                    const fallback = document.getElementById('contrib-pool-id');
+                    if (fallback && fallback.value) poolId = Number(fallback.value);
+                }
+
+                if (!Number.isFinite(poolId) || poolId <= 0) {
+                    showAlert('❌ Selecciona una cooperativa activa', 'danger');
+                    return;
+                }
+
+                // Validar que la pool existe y está activa
+                console.log('🔍 Validando pool #' + poolId + ' antes de contribuir...');
+                let pool;
+                try {
+                    // Validación en backend
+                    let res = await fetch(`/api/pools/${poolId}`);
+                    if (res.status === 404) {
+                        console.warn(`Pool #${poolId} no está en el backend; registrando...`);
+                        try {
+                            await ensureServerHasPool(poolId);      // <- nuevo
+                            res = await fetch(`/api/pools/${poolId}`); // reintenta
+                        } catch (e) {
+                            showAlert(`❌ No se pudo registrar la pool #${poolId} en el backend. ${e.message}`, 'danger');
+                            throw e;
+                        }
+                    }
+                    if (!res.ok) {
+                        const msg = await res.text().catch(()=>'');
+                        showAlert(`❌ Error validando pool (#${poolId}): ${msg || res.status}`, 'danger');
+                        return;
+                    }
+
+                    pool = await res.json();
+                    
+                    // Verificar que la pool no esté finalizada
+                    if (pool.finalized) {
+                        throw new Error(`Pool #${poolId} ya está finalizada`);
+                    }
+                    
+                    // Verificar que no haya expirado
+                    const now = Math.floor(Date.now() / 1000);
+                    if (now > Number(pool.deadline)) {
+                        throw new Error(`Pool #${poolId} ha expirado`);
+                    }
+                    
+                    console.log('✅ Pool #' + poolId + ' validada:', pool);
+                } catch (e) {
+                    console.error('❌ Error validando pool:', e);
+                    showAlert('❌ Error validando cooperativa: ' + e.message, 'danger');
+                    return;
+                }
+
+                const amountXlm = parseFloat(document.getElementById('contrib-amount').value);
+
+                // Validaciones
+                if (!poolId || poolId <= 0) {
+                    showAlert('❌ Ingresa un ID de pool válido', 'danger');
+                    return;
+                }
+
+                if (!Number.isFinite(amountXlm) || amountXlm <= 0) {
+                    showAlert('❌ La cantidad debe ser mayor a 0 XLM', 'danger');
+                    return;
+                }
+
+                // Convertir XLM a stroops (7 decimales para XLM)
+                const amountStroops = BigInt(Math.round(amountXlm * 1e7));
+
+                console.log('💰 Contribuyendo al pool...');
+                console.log('🆔 Pool ID:', poolId);
+                console.log('💵 Cantidad:', amountXlm, 'XLM');
+
+                // Mostrar panel de proceso
+                showProcessPanel();
+                setProcessStep(1);
+                updateProcessStatus('Verificando balance de XLM...');
+
+                // Asegurar que tenemos XLM suficiente en el token SAC
+                console.log('💰 Verificando balance de XLM en token...');
+                await ensureWrappedXlm(amountStroops, pool.token);
+
+                setProcessStep(2);
+                updateProcessStatus('Preparando aprobación...');
+
+                // Primero necesitamos aprobar el contrato para gastar nuestros XLM
+                console.log('🔐 Aprobando contrato para gastar XLM...');
+                
+                const account = await server.getAccount(userAddress);
+                
+                // Obtener ledger actual para expiration_ledger
+                const { sequence } = await server.getLatestLedger();
+                const expirationLedger = sequence + 1000; // 1000 ledgers de validez
+                
+                // 1) Construir operación de approve (4 argumentos: from, spender, amount, expiration)
+                // from = usuario que autoriza
+                const fromAddr = StellarSdk.Address.fromString(userAddress);
+                const fromScVal = StellarSdk.nativeToScVal(fromAddr, { type: 'address' });
+                
+                // spender = tu contrato (usar fromString para consistencia)
+                const spenderAddr = StellarSdk.Address.fromString(CONFIG.contractId);
+                const spenderScVal = StellarSdk.nativeToScVal(spenderAddr, { type: 'address' });
+                
+                // amount y expiration como ya tienes
+                const amountScVal = StellarSdk.nativeToScVal(amountStroops, { type: 'i128' });
+                const expScVal = StellarSdk.nativeToScVal(expirationLedger, { type: 'u32' });
+                
+                console.log('🔍 Debug approve args (4 argumentos):');
+                console.log('  - fromScVal:', fromScVal);
+                console.log('  - spenderScVal:', spenderScVal);
+                console.log('  - amountScVal:', amountScVal);
+                console.log('  - expScVal:', expScVal);
+                
+                const approveOperation = StellarSdk.Operation.invokeContractFunction({
+                    contract: pool.token, // Token específico de la pool
+                    function: 'approve',
+                    args: [fromScVal, spenderScVal, amountScVal, expScVal] // 4 args: from, spender, amount, expiration
+                });
+
+                // 2) Armar transacción base
+                let approveTransaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(approveOperation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
+                .build();
+
+                // 3) Simular y preparar
+                setProcessStep(3);
+                updateProcessStatus('Simulando aprobación...');
+                console.log('🔍 Simulando approve...');
+                const approveSimulation = await server.simulateTransaction(approveTransaction);
+                if (approveSimulation.error) {
+                    throw new Error('Error en simulación de approve: ' + approveSimulation.error);
+                }
+
+                setProcessStep(4);
+                updateProcessStatus('Preparando aprobación...');
+                console.log('🔧 Preparando approve...');
+                approveTransaction = await server.prepareTransaction(approveTransaction);
+
+                // 4) Firmar y enviar approve
+                const signedApprove = await window.freighter.signTransaction(approveTransaction.toXDR(), {
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress  // unifica: usa 'address' para ser consistente
+                });
+
+                if (signedApprove.error) {
+                    throw new Error('Error firmando approve: ' + signedApprove.error);
+                }
+
+                const approveSignedXdr = signedApprove.signedTxXdr ?? signedApprove.signedXDR;
+                if (!approveSignedXdr) {
+                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
+                }
+
+                const approveToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    approveSignedXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                const approveResponse = await server.sendTransaction(approveToSubmit);
+                console.log('✅ Approve enviado:', approveResponse);
+
+                // Manejar PENDING usando waitForTx (como en createPool)
+                if (approveResponse.status === 'PENDING') {
+                    console.log('⏳ Approve pendiente, esperando confirmación...');
+                    const final = await waitForTx(approveResponse.hash);
+                    if (final.status !== 'SUCCESS') {
+                        throw new Error('Approve no se confirmó: ' + final.status);
+                    }
+                    console.log('✅ Approve confirmado on-chain');
+                } else if (approveResponse.status !== 'SUCCESS') {
+                    throw new Error('Approve falló: ' + approveResponse.status);
+                }
+
+                // Ahora crear la transacción de contribute
+                setProcessStep(5);
+                updateProcessStatus('Preparando contribución...');
+                console.log('💸 Enviando contribución...');
+                
+                // 1) Construir operación de contribute
+                const userAddr = StellarSdk.Address.fromString(userAddress);
+                const userScVal = StellarSdk.nativeToScVal(userAddr, { type: 'address' });
+                const contributeOperation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'contribute',
+                    args: [
+                        StellarSdk.nativeToScVal(poolId, { type: 'u32' }), // pool_id
+                        userScVal,                                         // user: Address
+                        StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }) // amount
+                    ]
+                });
+
+                // 2) Armar transacción base
+                let contributeTransaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(contributeOperation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
+                .build();
+
+                // 3) Simular y preparar
+                console.log('🔍 Simulando contribute...');
+                const contributeSimulation = await server.simulateTransaction(contributeTransaction);
+                if (contributeSimulation.error) {
+                    throw new Error('Error en simulación de contribute: ' + contributeSimulation.error);
+                }
+
+                console.log('🔧 Preparando contribute...');
+                contributeTransaction = await server.prepareTransaction(contributeTransaction);
+
+                // 4) Firmar y enviar contribute
+                const signedContribute = await window.freighter.signTransaction(contributeTransaction.toXDR(), {
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress  // unifica: usa 'address' para ser consistente
+                });
+
+                if (signedContribute.error) {
+                    throw new Error('Error firmando contribute: ' + signedContribute.error);
+                }
+
+                const contributeSignedXdr = signedContribute.signedTxXdr ?? signedContribute.signedXDR;
+                if (!contributeSignedXdr) {
+                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
+                }
+
+                const contributeToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    contributeSignedXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                const contributeResponse = await server.sendTransaction(contributeToSubmit);
+                console.log('✅ Contribución enviada:', contributeResponse);
+
+                // Manejar PENDING usando waitForTx (como en createPool y approve)
+                if (contributeResponse.status === 'PENDING') {
+                    storeLastTransaction(contributeResponse.hash);
+                    showProcessHash(contributeResponse.hash);
+                    updateProcessStatus('⏳ Esperando confirmación de contribución...');
+                    const final = await waitForTx(contributeResponse.hash);
+                    if (final.status !== 'SUCCESS') {
+                        throw new Error(`La contribución falló on-chain: ${final.status}`);
+                    }
+                    console.log('✅ Contribución confirmada on-chain');
+                } else if (contributeResponse.status !== 'SUCCESS') {
+                    throw new Error(`La contribución no fue aceptada: ${contributeResponse.status}`);
+                }
+
+                // Si llegamos aquí, fue SUCCESS on-chain
+                setProcessStep(6);
+                updateProcessStatus('✅ Contribución confirmada');
+                showAlert(`✅ ¡Contribución exitosa! ${amountXlm} XLM al pool ${poolId}`, 'success');
+
+                // 🔄 Refrescar la tarjeta del pool (con pequeño retardo para consistencia eventual)
+                try {
+                    // Asegura que el selector de "Acciones" también apunte a este pool
+                    document.getElementById('action-pool-id').value = String(poolId);
+                    // Pequeño retardo para asegurar consistencia eventual
+                    setTimeout(async () => {
+                        try {
+                            const info = await getPoolInfo(poolId);   // <- vuelve a simular get_pool y re-renderiza
+                            // 🔄 Sincronizar con backend después de contribuir
+                            if (info?.pool) {
+                                await fetch('/api/pools/register', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({ pool: normalizePoolForBackend(info.pool) })
+                                });
+                            }
+                        } catch (e) {
+                            console.warn('No se pudo refrescar el pool automáticamente:', e);
+                        }
+                    }, 1200);
+                } catch (e) {
+                    console.warn('Error configurando refresco del pool:', e);
+                }
+                
+                // Limpiar formulario y ocultar panel
+                document.getElementById('contrib-amount').value = '10';
+                setTimeout(() => hideProcessPanel(), 2000);
+
+            } catch (error) {
+                console.error('❌ Error contribuyendo:', error);
+                showAlert('❌ Error contribuyendo: ' + error.message, 'danger');
+                setTimeout(() => hideProcessPanel(), 3000);
+            }
+        }
+
+        // Finalizar un pool (solo el creador)
+        // Finalizar un pool (solo el creador)
+        async function finalizePool() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet para finalizar', 'danger');
+                return;
+            }
+
+            try {
+                const poolId = parseInt(document.getElementById('action-pool-id').value);
+                if (!poolId || poolId <= 0) {
+                    showAlert('❌ Ingresa un ID de pool válido', 'danger');
+                    return;
+                }
+
+                // Mostrar panel de proceso
+                showProcessPanel();
+                setProcessStep(1);
+                updateProcessStatus('Creando transacción de finalización…');
+
+                // (Opcional) Traer datos del pool para el mensaje de éxito
+                let raisedXlm = null, supplierShort = '';
+                try {
+                    const res = await getPoolInfo(poolId); // read-only (simulación)
+                    if (res?.pool) {
+                        raisedXlm = (Number(res.pool.raised) / 1e7).toFixed(2);
+                        const s = String(res.pool.supplier);
+                        supplierShort = `${s.slice(0,6)}…${s.slice(-4)}`;
+                    }
+                } catch(_) {}
+
+                const account = await server.getAccount(userAddress);
+
+                // --- Construir operación con 2 argumentos: pool_id y creator(Address)
+                const operation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'finalize',
+                    args: [
+                        StellarSdk.nativeToScVal(poolId, { type: 'u32' }),
+                        StellarSdk.nativeToScVal(
+                            StellarSdk.Address.fromString(userAddress),
+                            { type: 'address' }
+                        )
+                    ]
+                });
+
+                let tx = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(operation)
+                .setTimeout(600)
+                .build();
+
+                setProcessStep(2);
+                updateProcessStatus('Simulando y preparando…');
+                const sim = await server.simulateTransaction(tx);
+                if (sim.error) throw new Error('Error en simulación: ' + sim.error);
+
+                tx = await server.prepareTransaction(tx);
+
+                setProcessStep(3);
+                updateProcessStatus('Firmando con Freighter…');
+                const signed = await window.freighter.signTransaction(tx.toXDR(), {
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress
+                });
+                if (signed.error) throw new Error(signed.error);
+                const signedXdr = signed.signedTxXdr ?? signed.signedXDR;
+                const txToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    signedXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                setProcessStep(4);
+                updateProcessStatus('Enviando a la red…');
+                const submit = await server.sendTransaction(txToSubmit);
+
+                if (submit.status === 'PENDING') {
+                    storeLastTransaction(submit.hash);
+                    showProcessHash(submit.hash);
+                    updateProcessStatus('⏳ Esperando confirmación de finalización.');
+                    const final = await waitForTx(submit.hash);
+                    if (final.status !== 'SUCCESS') {
+                        throw new Error(`La finalización falló on-chain: ${final.status}`);
+                    }
+                } else if (submit.status !== 'SUCCESS') {
+                    throw new Error('La finalización no fue aceptada: ' + submit.status);
+                }
+
+                // Éxito on-chain
+                setProcessStep(5, 'completed');
+                updateProcessStatus('✅ XLM enviados al proveedor.', false);
+                showAlert(
+                    `✅ Pool ${poolId} finalizado. ${raisedXlm ?? ''} XLM enviados al proveedor ${supplierShort}.`,
+                    'success'
+                );
+
+                // Limpiar watcher de deadline (ya no es necesario)
+                clearDeadlineWatcher(poolId);
+
+                // Refrescar card del pool (marcará "Finalizado")
+                document.getElementById('action-pool-id').value = String(poolId);
+                setTimeout(async () => { 
+                    try { 
+                        const info = await getPoolInfo(poolId);
+                        // 🔄 Sincronizar con backend después de finalizar
+                        if (info?.pool) {
+                            await fetch('/api/pools/register', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({ pool: normalizePoolForBackend(info.pool) })
+                            });
+                        }
+                    } catch(_){} 
+                }, 1200);
+                setTimeout(() => hideProcessPanel(), 2000);
+
+            } catch (error) {
+                console.error('❌ Error finalizando pool:', error);
+                showAlert('❌ Error finalizando pool: ' + error.message, 'danger');
+                setTimeout(() => hideProcessPanel(), 3000);
+            }
+        }
+
+        // Solicitar reembolso de un pool fallido
+        async function requestRefund() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet para solicitar reembolso', 'danger');
+                return;
+            }
+
+            try {
+                const poolId = parseInt(document.getElementById('action-pool-id').value);
+
+                if (!poolId || poolId <= 0) {
+                    showAlert('❌ Ingresa un ID de pool válido', 'danger');
+                    return;
+                }
+
+                console.log('💰 Solicitando reembolso...');
+                console.log('🆔 Pool ID:', poolId);
+
+                // Mostrar panel de proceso
+                showProcessPanel();
+                setProcessStep(1);
+                updateProcessStatus('🔍 Simulando reembolso...');
+
+                const account = await server.getAccount(userAddress);
+                
+                // 1) Construir operación con 2 argumentos: pool_id y user(Address)
+                const operation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'refund',
+                    args: [
+                        StellarSdk.nativeToScVal(poolId, { type: 'u32' }),
+                        StellarSdk.nativeToScVal(
+                            StellarSdk.Address.fromString(userAddress),
+                            { type: 'address' }
+                        )
+                    ]
+                });
+
+                // 2) Armar transacción base
+                let transaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(operation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
+                .build();
+
+                // 3) Simular y preparar
+                setProcessStep(2);
+                updateProcessStatus('🔧 Preparando transacción...');
+                
+                const simulation = await server.simulateTransaction(transaction);
+                if (simulation.error) {
+                    throw new Error('Error en simulación: ' + simulation.error);
+                }
+
+                transaction = await server.prepareTransaction(transaction);
+
+                // 4) Firmar
+                setProcessStep(3);
+                updateProcessStatus('✍️ Firmando con Freighter...');
+                
+                const signedTransaction = await window.freighter.signTransaction(transaction.toXDR(), {
+                    networkPassphrase: CONFIG.networkPassphrase,
+                    address: userAddress
+                });
+
+                if (signedTransaction.error) {
+                    throw new Error(signedTransaction.error);
+                }
+
+                const signedXdr = signedTransaction.signedTxXdr ?? signedTransaction.signedXDR;
+                if (!signedXdr) {
+                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
+                }
+
+                const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+                    signedXdr,
+                    CONFIG.networkPassphrase
+                );
+
+                // 5) Enviar a la red
+                setProcessStep(4);
+                updateProcessStatus('Enviando a la red…');
+                
+                const submit = await server.sendTransaction(transactionToSubmit);
+                console.log('✅ Reembolso enviado:', submit);
+
+                // 6) Manejar respuesta (PENDING o SUCCESS)
+                if (submit.status === 'PENDING') {
+                    storeLastTransaction(submit.hash);
+                    showProcessHash(submit.hash);
+                    updateProcessStatus('⏳ Esperando confirmación de reembolso.');
+                    const final = await waitForTx(submit.hash);
+                    if (final.status !== 'SUCCESS') {
+                        throw new Error(`El reembolso falló on-chain: ${final.status}`);
+                    }
+                } else if (submit.status !== 'SUCCESS') {
+                    throw new Error('El reembolso no fue aceptado: ' + submit.status);
+                }
+
+                // 7) Éxito on-chain: reflejar en UI
+                setProcessStep(5, 'completed');
+                updateProcessStatus('✅ Reembolso recibido.', false);
+                showAlert(`✅ Reembolso de la cooperativa #${poolId} confirmado on-chain.`, 'success');
+
+                // Limpiar watcher de deadline (ya no es necesario)
+                clearDeadlineWatcher(poolId);
+
+                // Refrescar card del pool
+                const info = await getPoolInfo(poolId);
+                // 🔄 Sincronizar con backend después de reembolsar
+                if (info?.pool) {
+                    await fetch('/api/pools/register', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ pool: normalizePoolForBackend(info.pool) })
+                    });
+                }
+                
+                // Cerrar el panel visual después de un momento
+                setTimeout(() => hideProcessPanel(), 2000);
+
+            } catch (error) {
+                console.error('❌ Error solicitando reembolso:', error);
+                showAlert('❌ Error solicitando reembolso: ' + error.message, 'danger');
+                hideProcessPanel();
+            }
+        }
+
+        // Consultar información de un pool (read-only, sin firmar)
+        async function getPoolInfo(poolId = null) {
+            if (!isConnected) {
+                showAlert('❌ Conecta la wallet para ver información', 'danger');
+                return;
+            }
+
+            try {
+                // Si no se pasa poolId, obtenerlo del formulario
+                if (!poolId) {
+                    poolId = parseInt(document.getElementById('action-pool-id').value);
+                    if (!poolId || poolId <= 0) {
+                        showAlert('❌ Ingresa un ID de pool válido', 'danger');
+                        return;
+                    }
+                }
+
+                console.log('🔍 Consultando pool (read-only)...');
+                console.log('🆔 Pool ID:', poolId);
+
+                const account = await server.getAccount(userAddress);
+                
+                // 1) Construir operación
+                const operation = StellarSdk.Operation.invokeContractFunction({
+                    contract: CONFIG.contractId,
+                    function: 'get_pool',
+                    args: [
+                        StellarSdk.nativeToScVal(poolId, { type: 'u32' }) // pool_id
+                    ]
+                });
+
+                // 2) Armar transacción base
+                let transaction = new StellarSdk.TransactionBuilder(account, {
+                    fee: StellarSdk.BASE_FEE,
+                    networkPassphrase: CONFIG.networkPassphrase,
+                })
+                .addOperation(operation)
+                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
+                .build();
+
+                // 3) Solo simular (read-only)
+                console.log('🔍 Simulando consulta de pool...');
+                const simulation = await server.simulateTransaction(transaction);
+                if (simulation.error) {
+                    throw new Error('Error en simulación: ' + simulation.error);
+                }
+
+                // Decodificar el returnValue (ScVal -> JS)
+                const scv = simulation.result?.retval ?? simulation.result?.returnValue ?? simulation.returnValue;
+                if (!scv) {
+                    throw new Error('Sin returnValue en la simulación');
+                }
+
+                const pool = StellarSdk.scValToNative(scv);
+                console.log('📊 Datos del pool (decodificado):', pool);
+
+                // Calcular estado del pool
+                const now = Math.floor(Date.now() / 1000);
+                const expired = now > pool.deadline;
+                const funded = BigInt(pool.raised) >= BigInt(pool.goal);
+                const status = pool.finalized ? 'finalized'
+                             : expired && !funded ? 'expired'
+                             : funded ? 'funded'
+                             : 'active';
+
+                // Solo programar si aún NO está vencido ni finalizado
+                if (!expired && !pool.finalized) {
+                    scheduleDeadlineWatcher(poolId, pool.deadline);
+                }
+
+                // Renderizar tarjeta del pool
+                renderPoolCard(poolId, pool, status);
+
+                // Recordar el pool activo y refrescar dropdown
+                rememberActivePool(pool);
+                refreshContribDropdownFromCache();
+
+                // Validar y habilitar/deshabilitar botón de reembolso
+                const refundBtn = document.getElementById('refund-btn');
+                if (refundBtn) {
+                    const canRefundPool = canRefund(pool);
+                    refundBtn.disabled = !canRefundPool;
+                    
+                    // Tooltip explicativo
+                    if (!canRefundPool) {
+                        refundBtn.title = 'Solo disponible si el plazo venció y no se llegó a la meta.';
+                    } else {
+                        refundBtn.title = '';
+                    }
+                }
+
+                return { pool, status };
+
+            } catch (error) {
+                console.error('❌ Error consultando pool:', error);
+                showAlert('❌ Error consultando pool: ' + error.message, 'danger');
+                return null;
+            }
+        }
+
+        // Renderizar tarjeta del pool en la UI
+        function renderPoolCard(poolId, pool, status) {
+            const poolsList = document.getElementById('pools-list');
+            
+            // Crear o actualizar tarjeta del pool
+            let poolCard = document.getElementById(`pool-${poolId}`);
+            if (!poolCard) {
+                poolCard = document.createElement('div');
+                poolCard.id = `pool-${poolId}`;
+                poolCard.className = 'pool-card';
+                poolsList.appendChild(poolCard);
+            }
+
+            // Calcular progreso
+            const progress = Number(pool.raised) / Number(pool.goal) * 100;
+            const goalXlm = Number(pool.goal) / 10000000;
+            const raisedXlm = Number(pool.raised) / 10000000;
+            const deadline = new Date(Number(pool.deadline) * 1000);
+
+            // Mapear estados a clases CSS
+            const statusClass = {
+                'active': 'status-active',
+                'funded': 'status-funded', 
+                'finalized': 'status-funded',
+                'expired': 'status-expired'
+            }[status] || 'status-active';
+
+            const statusText = {
+                'active': 'Activo',
+                'funded': 'Financiado',
+                'finalized': 'Finalizado',
+                'expired': 'Expirado'
+            }[status] || 'Activo';
+
+            poolCard.innerHTML = `
+                <div class="pool-header">
+                    <span class="pool-id">Pool #${poolId}</span>
+                    <span class="pool-status ${statusClass}">${statusText}</span>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.min(progress, 100)}%"></div>
+                </div>
+                
+                <div class="pool-info">
+                    <div class="info-item">
+                        <div class="info-label">Meta</div>
+                        <div class="info-value">${goalXlm} XLM</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Recaudado</div>
+                        <div class="info-value">${raisedXlm} XLM</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Progreso</div>
+                        <div class="info-value">${progress.toFixed(1)}%</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Deadline</div>
+                        <div class="info-value">${deadline.toLocaleDateString()}</div>
+                    </div>
+                </div>
+                
+                ${status === 'funded' && userAddress === pool.creator ? `
+                    <div class="pool-actions" style="margin-top: 15px; text-align: center;">
+                        <button class="btn btn-success" onclick="finalizePoolFromCard(${poolId})" style="width: 100%;">
+                            💳 Finalizar y Pagar al Proveedor
+                        </button>
+                        <small style="color: #666; font-size: 0.9em; display: block; margin-top: 5px;">
+                            Meta alcanzada - Listo para pagar
+                        </small>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // Finalizar pool desde la tarjeta (cuando está financiado)
+        async function finalizePoolFromCard(poolId) {
+            // Establecer el ID en el formulario de acciones
+            document.getElementById('action-pool-id').value = String(poolId);
+            // Llamar a la función de finalización normal
+            await finalizePool();
+        }
+
+        // --- Intenta extraer poolId desde el returnValue
+        async function getPoolIdFromReturnValue(hash) {
+            try {
+                const tx = await safeGetTransaction(hash);
+                if (tx.status !== 'SUCCESS') return null;
+
+                // posibles ubicaciones del retorno según SDK/RPC
+                const raw = tx.returnValue ?? tx.result?.retval ?? tx.result?.returnValue;
+                const scv = toScVal(raw);
+                if (!scv) return null;
+
+                const native = StellarSdk.scValToNative(scv);
+                const id = (native && typeof native === 'object' && 'id' in native) ? native.id : native;
+                const n = Number(id);
+                return Number.isFinite(n) ? n : null;
+            } catch (e) {
+                console.error('Error extrayendo poolId (returnValue):', e);
+                return null;
+            }
+        }
+
+        // --- Fallback: leer poolId desde eventos de la TX
+        async function getPoolIdFromEventsByTx(hash) {
+            try {
+                const tx = await safeGetTransaction(hash);
+                if (tx.status !== 'SUCCESS') return null;
+
+                const ev = await server.getEvents({
+                    startLedger: tx.ledger,
+                    filters: [{ type: 'contract', contractIds: [CONFIG.contractId] }],
+                });
+
+                const event = ev.events.find(e => e.txHash === hash);
+                if (!event) return null;
+
+                // value puede estar en varias formas según el endpoint
+                const raw = event?.value?.xdr || event?.value || event?.data?.xdr || event?.data;
+                const scv = toScVal(raw);
+                if (!scv) return null;
+
+                const native = StellarSdk.scValToNative(scv);
+                const id = (native && typeof native === 'object' && 'id' in native) ? native.id : native;
+                const n = Number(id);
+                return Number.isFinite(n) ? n : null;
+            } catch (e) {
+                console.error('Error extrayendo poolId (eventos):', e);
+                return null;
+            }
+        }
+
+        // --- Agregador: dame el poolId como sea
+        async function getPoolIdFromTx(hash) {
+            let id = await getPoolIdFromReturnValue(hash);
+            if (!id) id = await getPoolIdFromEventsByTx(hash);
+
+            // último recurso: si tu contrato guarda NextPoolId, puedes leerlo y restar 1
+            // id = id ?? await getLastPoolIdByCounter(); // (opcional)
+            return id;
+        }
+
+        // Variable global para controlar resync
+        let didResyncOnce = false;
+
+        // Función helper para renderizar lista de pools (usada en fallbacks)
+        function renderPoolsList(pools) {
+            const container = document.getElementById('pools-list');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            for (const pool of pools) {
+                renderPoolCard(Number(pool.id), pool, pool.status);
+                rememberActivePool(pool);
+                scheduleDeadlineWatcher(pool.id, pool.deadline);
+            }
+            refreshContribDropdownFromCache();
+        }
+
+        // Función de bootstrap para reconstruir pools desde on-chain
+        async function devBootstrapPools(from=1, to=120) {
+            if (!isConnected || !userAddress) {
+                showAlert('Conecta la wallet para hacer el bootstrap', 'danger');
+                return;
+            }
+            const found = [];
+            showAlert('Iniciando bootstrap...', 'info');
+            
+            for (let i=from;i<=to;i++) {
+                try {
+                    const r = await getPoolInfo(i); // ya pinta tarjeta y devuelve { pool, status }
+                    if (r && r.pool) found.push({ ...normalizePoolForBackend(r.pool), status: r.status });
+                } catch (_) { /* no existe ese id */ }
+                await new Promise(r=>setTimeout(r, 120)); // pequeño respiro al RPC
+            }
+            
+            if (found.length) {
+                try {
+                    const response = await fetch('/api/pools/register-batch', {
+                        method:'POST', 
+                        headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ pools: found })
+                    });
+                    if (response.ok) {
+                        showAlert(`Bootstrap: registradas ${found.length} cooperativas`, 'success');
+                        // Recargar la lista
+                        await loadActivePools();
+                    } else {
+                        showAlert('Error en bootstrap: ' + response.status, 'danger');
+                    }
+                } catch (e) {
+                    showAlert('Error enviando bootstrap: ' + e.message, 'danger');
+                }
+            } else {
+                showAlert('Bootstrap: no se encontró ninguna cooperativa en el rango', 'info');
+            }
+        }
+
+        async function loadActivePools() {
+            try {
+                // Permitir ver pools sin wallet, solo bloquear "crear/aportar" si no hay wallet
+                // Primera carga: normal, SIN resync (el backend ya hidrata al boot)
+                const qs = '?filter=actionable'; // producción
+                didResyncOnce = true;
+                let res;
+                try {
+                    res = await fetch('/api/pools' + qs, { method: 'GET' });
+                } catch (e) {
+                    // si hubo reset, espera un poco y reintenta
+                    await new Promise(r => setTimeout(r, 1500));
+                    res = await fetch('/api/pools?filter=actionable', { method: 'GET' });
+                }
+                
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const { pools } = await res.json();
+
+                // Fallback 1: si viene vacío, intenta ver TODO (sin filtro)
+                if (pools.length === 0) {
+                    try {
+                        const r2 = await fetch('/api/pools?all=1&_retried=1');
+                        if (r2.ok) {
+                            const j2 = await r2.json();
+                            if (j2.pools?.length) {
+                                renderPoolsList(j2.pools);
+                                return;
+                            }
+                        }
+                    } catch {}
+                }
+
+                // Guardar snapshot en localStorage
+                try { localStorage.setItem('pools_snapshot', JSON.stringify(pools)); } catch(_) {}
+
+                // Limpia UI previa
+                const container = document.getElementById('pools-list');
+                if (container) container.innerHTML = '';
+
+                // Dibuja todas y actualiza caches/dropdown
+                for (const pool of pools) {
+                    const status = pool.status; // viene del backend
+                    const poolId = Number(pool.id);
+                    renderPoolCard(poolId, pool, status);          // ya la tienes
+                    rememberActivePool(pool);                      // ya la tienes
+                    scheduleDeadlineWatcher(poolId, pool.deadline);// ya la tienes
+                    // 👇 Nueva sincronización on-chain cuando hay wallet conectada
+                    if (isConnected && userAddress) {
+                        try { await getPoolInfo(poolId); } catch (_) {}
+                    }
+                }
+                refreshContribDropdownFromCache();               // ya la tienes
+
+                showAlert(`✅ ${pools.length} cooperativa(s) cargadas`, 'success');
+            } catch (e) {
+                console.error('❌ Error cargando pools públicas:', e);
+                showAlert('❌ No se pudieron cargar las cooperativas públicas', 'danger');
+            }
+        }
+
+        // Verificar estado de transacción por hash
+        async function checkTransactionStatus() {
+            const hash = prompt('Ingresa el hash de la transacción:');
+            if (!hash) return;
+
+            try {
+                console.log('🔍 Verificando estado de transacción...');
+                console.log('📋 Hash:', hash);
+
+                const response = await server.getTransaction(hash);
+                console.log('📊 Estado de transacción:', response);
+
+                if (response.status === 'SUCCESS') {
+                    showAlert(`✅ Transacción exitosa!\nHash: ${hash}\nLedger: ${response.ledger}`, 'success');
+                } else if (response.status === 'PENDING') {
+                    showAlert(`⏳ Transacción pendiente\nHash: ${hash}\nÚltimo ledger: ${response.latestLedger}`, 'info');
+                } else if (response.status === 'ERROR') {
+                    showAlert(`❌ Transacción falló\nHash: ${hash}\nError: ${JSON.stringify(response.errorResult)}`, 'danger');
+                } else {
+                    showAlert(`ℹ️ Estado: ${response.status}\nHash: ${hash}`, 'info');
+                }
+
+            } catch (error) {
+                console.error('❌ Error verificando transacción:', error);
+                showAlert('❌ Error verificando transacción: ' + error.message, 'danger');
+            }
+        }
+
+        // Verificar estado de la última transacción (si está almacenada)
+        let lastTransactionHash = null;
+
+        // Guarda el hash para la UI y para reintentos tras refresh
+        function storeLastTransaction(hash) {
+            lastTransactionHash = hash;
+            localStorage.setItem('lastTxHash', hash);
+            console.log('💾 Hash almacenado:', hash);
+        }
+
+        // Cargar hash desde localStorage al inicializar
+        function loadLastTransaction() {
+            const stored = localStorage.getItem('lastTxHash');
+            if (stored) {
+                lastTransactionHash = stored;
+                console.log('📂 Hash cargado desde localStorage:', stored);
+            }
+        }
+
+        // Funciones para manejar el estado visual del proceso
+        function showProcessPanel() {
+            const panel = document.getElementById('process-status-panel');
+            panel.style.display = 'block';
+            resetProcessSteps();
+        }
+
+        function hideProcessPanel() {
+            const panel = document.getElementById('process-status-panel');
+            panel.style.display = 'none';
+        }
+
+        function resetProcessSteps() {
+            document.querySelectorAll('.process-step')
+                .forEach(el => el.classList.remove('active', 'completed'));
+        }
+
+        function setProcessStep(stepNumber, status = 'active') {
+            const steps = [...document.querySelectorAll('.process-step')];
+            steps.forEach((el, idx) => {
+                const i = idx + 1;
+                if (i < stepNumber) { 
+                    el.classList.remove('active'); 
+                    el.classList.add('completed'); 
+                }
+                else if (i === stepNumber) { 
+                    el.classList.remove('completed'); 
+                    el.classList.add(status); 
+                }
+            });
+        }
+
+        function updateProcessStatus(text, isActive = true) {
+            const statusText = document.getElementById('process-status-text');
+            const statusBadge = document.getElementById('process-status-badge');
+            
+            statusText.textContent = text;
+            
+            if (isActive) {
+                statusBadge.style.background = 'rgba(255, 255, 255, 0.2)';
+            } else {
+                statusBadge.style.background = 'rgba(34, 197, 94, 0.2)';
+            }
+        }
+
+        function showProcessHash(hash) {
+            const hashDisplay = document.getElementById('process-hash-display');
+            const hashValue = document.getElementById('process-hash-value');
+            
+            hashValue.textContent = hash;
+            hashDisplay.style.display = 'block';
+        }
+
+        function hideProcessHash() {
+            const hashDisplay = document.getElementById('process-hash-display');
+            hashDisplay.style.display = 'none';
+        }
+
+        // --- Helper: llamada cruda al RPC (asegura usar "hash")
+        async function rawGetTransactionStatus(rpcUrl, hash) {
+            const h = String(hash).trim();
+            if (h.length !== 64) throw new Error(`hash inválido (${h.length} chars)`);
+            const body = { jsonrpc: "2.0", id: 1, method: "getTransaction", params: { hash: h } };
+            const r = await fetch(rpcUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+            const j = await r.json();
+            if (j?.error) throw new Error(j.error.message || "RPC error");
+            return {
+                status: j?.result?.status ?? "NOT_FOUND",
+                ledger: j?.result?.ledger,
+                latestLedger: j?.result?.latestLedger,
+                latestLedgerCloseTime: j?.result?.latestLedgerCloseTime,
+                returnValue: j?.result?.returnValue // algunos RPC lo incluyen
+            };
+        }
+
+        // --- Helper: intenta SDK y si falla usa RPC crudo
+        async function safeGetTransaction(hash) {
+            try { 
+                return await server.getTransaction(hash); 
+            } catch (e) { 
+                console.warn('getTransaction SDK falló, usando RPC crudo:', e?.message || e);
+                return await rawGetTransactionStatus(CONFIG.sorobanRpcUrl, hash);
+            }
+        }
+
+        // --- Helper: normaliza un ScVal venga como venga
+        function toScVal(scvLike) {
+            if (!scvLike) return null;
+            try {
+                if (scvLike instanceof StellarSdk.xdr.ScVal) return scvLike;
+                if (typeof scvLike === 'string') return StellarSdk.xdr.ScVal.fromXDR(scvLike, 'base64');
+                if (typeof scvLike === 'object' && typeof scvLike.xdr === 'string')
+                    return StellarSdk.xdr.ScVal.fromXDR(scvLike.xdr, 'base64');
+            } catch (e) {
+                console.warn('toScVal: no se pudo convertir', e);
+            }
+            return null;
+        }
+
+        // Poll de estado de transacción (Soroban RPC) - Versión robusta con fallback
+        async function waitForTx(hash, { intervalMs = 2500, maxMs = 180000 } = {}) {
+            const start = Date.now();
+            console.log(`🔄 Iniciando watcher para hash: ${hash}`);
+            
+            while (true) {
+                try {
+                    let res;
+                    try {
+                        // 1) Intento normal con el SDK
+                        res = await server.getTransaction(hash);
+                    } catch (sdkErr) {
+                        console.warn('⚠️ getTransaction (SDK) falló, usando RPC crudo:', sdkErr?.message || sdkErr);
+                        // 2) Fallback "crudo" sin decodificar XDR
+                        res = await rawGetTransactionStatus(CONFIG.sorobanRpcUrl, hash);
+                    }
+
+                    console.log(`📊 Estado actual: ${res.status}`);
+
+                    // NOT_FOUND | PENDING | SUCCESS | FAILED
+                    if (res.status === 'SUCCESS' || res.status === 'FAILED') {
+                        console.log(`✅ Watcher completado: ${res.status}`);
+                        return res;
+                    }
+
+                    if (Date.now() - start > maxMs) {
+                        throw new Error('Timeout esperando confirmación');
+                    }
+                    await new Promise(r => setTimeout(r, intervalMs));
+                } catch (error) {
+                    console.error('❌ Error en watcher:', error);
+                    if (Date.now() - start > maxMs) throw error;
+                    await new Promise(r => setTimeout(r, intervalMs));
+                }
+            }
+        }
+
+        async function checkLastTransaction() {
+            if (!lastTransactionHash) {
+                showAlert('❌ No hay transacción reciente para verificar', 'danger');
+                return;
+            }
+
+            try {
+                console.log('🔍 Verificando última transacción...');
+                console.log('📋 Hash:', lastTransactionHash);
+
+                const response = await safeGetTransaction(lastTransactionHash);
+
+                console.log('📊 Estado de transacción:', response);
+
+                if (response.status === 'SUCCESS') {
+                    showAlert(`✅ ¡Transacción exitosa!\nHash: ${lastTransactionHash}\nLedger: ${response.ledger}`, 'success');
+                } else if (response.status === 'PENDING') {
+                    showAlert(`⏳ Transacción pendiente\nHash: ${lastTransactionHash}\nÚltimo ledger: ${response.latestLedger}`, 'info');
+                } else if (response.status === 'ERROR') {
+                    showAlert(`❌ Transacción falló\nHash: ${lastTransactionHash}\nError: ${JSON.stringify(response.errorResult)}`, 'danger');
+                } else {
+                    showAlert(`ℹ️ Estado: ${response.status}\nHash: ${lastTransactionHash}`, 'info');
+                }
+
+            } catch (error) {
+                console.error('❌ Error verificando transacción:', error);
+                showAlert('❌ Error verificando transacción: ' + error.message, 'danger');
+            }
+        }
+
+        // Inicializar cuando se carga la página
+        window.addEventListener('load', init);
+        
+        // Inicializar conversiones cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            updateConversion('goal', 'goal-conversion');
+            updateConversion('contrib-amount', 'contrib-conversion');
+            
+            // Configurar campo de fecha con valor por defecto (+30 días)
+            const deadlineEl = document.getElementById('deadline');
+            if (deadlineEl) {
+                const now = new Date();
+                deadlineEl.min = formatLocalDatetime(now);
+                
+                const defaultDate = new Date();
+                defaultDate.setDate(defaultDate.getDate() + 30);
+                deadlineEl.value = formatLocalDatetime(defaultDate);
+            }
+            
+            // Inicializar carrusel de plantillas
+            generateCarouselCards();
+        });
+    </script>
+</body>
+</html>
+                                
