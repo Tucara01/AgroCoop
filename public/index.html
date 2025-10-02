@@ -75,7 +75,7 @@
         }
         
         .header::after {
-            content: "🌾";
+            content: "";
             position: absolute;
             right: 20px;
             top: 50%;
@@ -385,109 +385,6 @@
             color: #856404;
         }
 
-        /* Estilos para el panel de estado del proceso */
-        .process-status-panel {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .process-status-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .process-status-header h4 {
-            margin: 0;
-            color: white;
-            font-size: 1.2em;
-        }
-
-        .process-status-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.9em;
-        }
-
-        .process-dot {
-            width: 8px;
-            height: 8px;
-            background: #4ade80;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        .process-status-content {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .process-step {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-            opacity: 0.5;
-        }
-
-        .process-step.active {
-            background: rgba(255, 255, 255, 0.2);
-            opacity: 1;
-            transform: scale(1.02);
-        }
-
-        .process-step.completed {
-            background: rgba(34, 197, 94, 0.2);
-            opacity: 1;
-        }
-
-        .step-icon {
-            font-size: 1.2em;
-            min-width: 24px;
-        }
-
-        .step-text {
-            flex: 1;
-            font-size: 0.9em;
-        }
-
-        .process-hash {
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-        }
-
-        .process-hash label {
-            display: block;
-            font-size: 0.8em;
-            margin-bottom: 5px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .process-hash code {
-            background: rgba(0, 0, 0, 0.3);
-            color: #fbbf24;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.8em;
-            word-break: break-all;
-        }
         
         
         .btn {
@@ -1051,6 +948,20 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .pool-name {
+            background: #667eea;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: .9em;
+            font-weight: bold;
+            max-width: 70%;          /* no invadir el badge de estado */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;  /* "…" si es muy largo */
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -1095,51 +1006,12 @@
         </div>
 
 
-        <!-- Panel de Estado del Proceso -->
-        <div id="process-status-panel" class="process-status-panel" style="display: none;">
-            <div class="process-status-header">
-                <h4>🔄 Procesando Transacción</h4>
-                <div class="process-status-badge" id="process-status-badge">
-                    <span class="process-dot"></span>
-                    <span id="process-status-text">Iniciando...</span>
-                </div>
-            </div>
-            <div class="process-status-content">
-                <div class="process-step" id="process-step-1">
-                    <span class="step-icon">📝</span>
-                    <span class="step-text">Creando transacción...</span>
-                </div>
-                <div class="process-step" id="process-step-2">
-                    <span class="step-icon">✍️</span>
-                    <span class="step-text">Firmando con Freighter...</span>
-                </div>
-                <div class="process-step" id="process-step-3">
-                    <span class="step-icon">📤</span>
-                    <span class="step-text">Enviando a la red...</span>
-                </div>
-                <div class="process-step" id="process-step-4">
-                    <span class="step-icon">⏳</span>
-                    <span class="step-text">Esperando confirmación...</span>
-                </div>
-                <div class="process-step" id="process-step-5">
-                    <span class="step-icon">✅</span>
-                    <span class="step-text">Procesando resultado...</span>
-                </div>
-            </div>
-            <div class="process-hash" id="process-hash-display" style="display: none;">
-                <label>Hash de la transacción:</label>
-                <code id="process-hash-value">-</code>
-            </div>
-        </div>
 
         <!-- Cooperativas Activas - Home Principal -->
         <div class="section full-width">
             <h3>📊 Cooperativas Activas</h3>
             <button class="btn" onclick="loadActivePools()" id="load-pools-btn" disabled>
                 📊 Cargar Cooperativas
-            </button>
-            <button class="btn btn-warning" onclick="devBootstrapPools(1, 120)" title="Bootstrap: reconstruir pools desde on-chain">
-                🔄 Bootstrap
             </button>
             <div class="pools-scroll-container" id="pools-scroll-container">
               <div class="pools-scroll-wrapper" id="pools-scroll-wrapper">
@@ -1153,6 +1025,16 @@
             <!-- Crear Pool -->
             <div class="section">
                 <h3>🌱 Crear Cooperativa</h3>
+                <div class="form-group">
+                    <label>Nombre de la Cooperativa:</label>
+                    <input
+                        type="text"
+                        id="pool-name"
+                        placeholder="Ej: Leña de invierno para la sede"
+                        maxlength="40"
+                    />
+                    <small style="color:#666;font-size:0.9em;">Máx 40 caracteres</small>
+                </div>
                 <div class="form-group">
                     <label>Proveedor de Insumos:</label>
                     <input type="text" id="supplier" placeholder="GABC... o nombre del proveedor" />
@@ -1209,6 +1091,9 @@
                 </button>
                 <button class="btn btn-danger" onclick="requestRefund()" id="refund-btn" disabled>
                     💰 Obtener Reembolso
+                </button>
+                <button class="btn btn-warning" onclick="confirmDeleteAllPools()" id="delete-all-btn">
+                    🗑️ Eliminar Todas las Pools
                 </button>
             </div>
         </div>
@@ -1346,6 +1231,183 @@
             });
         }
 
+        // --- Funciones de Administración de Pools ---
+        function getAdminCode() {
+            console.log('🔑 [DEBUG] getAdminCode() iniciada');
+            
+            let code = localStorage.getItem('pools_admin_code') || '';
+            console.log('🔑 [DEBUG] Código desde localStorage:', code ? 'SÍ (longitud: ' + code.length + ')' : 'NO');
+            
+            if (!code) {
+                console.log('🔑 [DEBUG] No hay código guardado, pidiendo al usuario');
+                code = prompt('Ingresa el código de administrador para ocultar/mostrar:') || '';
+                console.log('🔑 [DEBUG] Código ingresado por usuario:', code ? 'SÍ (longitud: ' + code.length + ')' : 'NO');
+                
+                if (code) {
+                    localStorage.setItem('pools_admin_code', code);
+                    console.log('🔑 [DEBUG] Código guardado en localStorage');
+                } else {
+                    console.log('🔑 [DEBUG] Usuario no ingresó código');
+                }
+            } else {
+                console.log('🔑 [DEBUG] Usando código existente del localStorage');
+            }
+            
+            console.log('🔑 [DEBUG] Código final a retornar:', code ? 'SÍ' : 'NO');
+            return code;
+        }
+
+        function clearAdminCode() {
+            console.log('🗑️ [DEBUG] clearAdminCode() - Limpiando código de admin del localStorage');
+            localStorage.removeItem('pools_admin_code');
+            console.log('✅ [DEBUG] Código de admin limpiado');
+        }
+
+        async function hideAllPools() {
+            console.log('🚀 [DEBUG] hideAllPools() iniciada');
+            
+            const code = getAdminCode();
+            console.log('🔑 [DEBUG] Código de admin obtenido:', code ? 'SÍ' : 'NO');
+            
+            if (!code) {
+                console.log('❌ [DEBUG] No hay código de admin, cancelando');
+                return showAlert('Acción cancelada: sin código', 'warning');
+            }
+
+            try {
+                console.log('📡 [DEBUG] Obteniendo lista de pools desde /api/pools?all=1');
+                // Traer TODAS las pools (no solo "actionable")
+                const res = await fetch('/api/pools?all=1');
+                console.log('📡 [DEBUG] Respuesta del servidor:', res.status, res.statusText);
+                
+                if (!res.ok) {
+                    console.log('❌ [DEBUG] Error en respuesta del servidor:', res.status);
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
+                // ⬅️ DES-ESTRUCTURAR correctamente
+                const { pools } = await res.json();
+                console.log('📊 [DEBUG] Pools obtenidas:', pools ? pools.length : 'undefined', 'pools');
+                console.log('📊 [DEBUG] Detalles de pools:', pools);
+
+                if (!Array.isArray(pools) || pools.length === 0) {
+                    console.log('ℹ️ [DEBUG] No hay pools para ocultar');
+                    showAlert('No hay cooperativas para ocultar', 'info');
+                    return;
+                }
+
+                console.log('🔄 [DEBUG] Iniciando proceso de ocultación de', pools.length, 'pools');
+                
+                let hiddenCount = 0;
+                let errorCount = 0;
+
+                for (const p of pools) {
+                    console.log(`🔄 [DEBUG] Procesando pool ID=${p.id}`);
+                    
+                    const r = await fetch('/api/pools/hide', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-admin-code': code,       // envías el código al backend
+                        },
+                        body: JSON.stringify({ id: p.id })
+                    });
+
+                    console.log(`📡 [DEBUG] Respuesta para pool ${p.id}:`, r.status, r.statusText);
+
+                    if (r.status === 403) {
+                        console.log('❌ [DEBUG] Código de admin inválido (403)');
+                        clearAdminCode();             // borra el que tengas guardado
+                        throw new Error('Código de administrador inválido (403)');
+                    }
+
+                    if (r.ok) {
+                        hiddenCount++;
+                        console.log(`✅ [DEBUG] Pool ${p.id} ocultada exitosamente`);
+                        
+                        // quita la tarjeta si existe en el DOM y limpia caches
+                        const el = document.getElementById(`pool-${p.id}`);
+                        if (el) {
+                            console.log(`🗑️ [DEBUG] Removiendo elemento DOM para pool ${p.id}`);
+                            el.remove();
+                        } else {
+                            console.log(`⚠️ [DEBUG] No se encontró elemento DOM para pool ${p.id}`);
+                        }
+                        activePoolsCache.delete(String(p.id));
+                        console.log(`🗑️ [DEBUG] Removido de activePoolsCache: ${p.id}`);
+                    } else {
+                        errorCount++;
+                        console.log(`❌ [DEBUG] Error ocultando pool ${p.id}:`, r.status);
+                    }
+                }
+
+                console.log(`📊 [DEBUG] Resumen: ${hiddenCount} ocultadas, ${errorCount} errores`);
+
+                // Limpia snapshot local y refresca el listado
+                console.log('🗑️ [DEBUG] Limpiando localStorage...');
+                localStorage.removeItem('pools_snapshot');
+                console.log('✅ [DEBUG] localStorage limpiado');
+                
+                console.log('🎉 [DEBUG] Mostrando notificación de éxito');
+                showAlert(`✅ ${hiddenCount} cooperativas ocultadas`, 'success');
+                
+                console.log('🔄 [DEBUG] Refrescando vista...');
+                await loadActivePools();
+                console.log('✅ [DEBUG] Vista refrescada');
+
+            } catch (e) {
+                console.log('❌ [DEBUG] Error general en hideAllPools:', e.message);
+                console.log('❌ [DEBUG] Stack trace:', e.stack);
+                showAlert('❌ Error al ocultar: ' + e.message, 'danger');
+            }
+        }
+
+        async function unhidePool(id) {
+            const code = getAdminCode();
+            if (!code) return showAlert('Acción cancelada: sin código', 'warning');
+            try {
+                const r = await fetch('/api/pools/unhide', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-code': code },
+                    body: JSON.stringify({ id })
+                });
+                if (!r.ok) {
+                    if (r.status === 403) { clearAdminCode(); }
+                    const err = await r.json().catch(()=>({error:'error'}));
+                    throw new Error(err.error || 'Error al mostrar');
+                }
+                showAlert(`Cooperativa #${id} restaurada`, 'success');
+                // Refrescar listado para que reaparezca
+                await loadActivePools();
+            } catch(e) {
+                showAlert(e.message, 'danger');
+            }
+        }
+
+        // Función de confirmación para eliminar todas las pools
+        async function confirmDeleteAllPools() {
+            console.log('🔍 [DEBUG] confirmDeleteAllPools() iniciada');
+            
+            const confirmation = prompt(
+                '⚠️ ADVERTENCIA: Esta acción ocultará TODAS las cooperativas del listado público.\n\n' +
+                'Las cooperativas seguirán existiendo en la blockchain, pero no serán visibles para los usuarios.\n' +
+                'Esta acción es REVERSIBLE - puedes restaurar las cooperativas más tarde.\n\n' +
+                'Escribe "ELIMINAR" para confirmar:'
+            );
+            
+            console.log('🔍 [DEBUG] Confirmación del usuario:', confirmation);
+            
+            if (confirmation === 'ELIMINAR') {
+                console.log('✅ [DEBUG] Confirmación válida, procediendo a ocultar todas las pools');
+                await hideAllPools();
+            } else if (confirmation !== null) {
+                console.log('❌ [DEBUG] Confirmación incorrecta:', confirmation);
+                showAlert('Acción cancelada: confirmación incorrecta', 'warning');
+            } else {
+                console.log('🚫 [DEBUG] Usuario canceló la acción');
+            }
+        }
+
         // Función para convertir XLM a CLP
         function xlmToClp(xlmAmount) {
             return Math.round(xlmAmount * CONFIG.xlmToClpRate);
@@ -1481,16 +1543,26 @@ setInterval(async () => {
             }
         }
 
-function refreshContribDropdownFromCache() {
+function refreshContribDropdownFromCache({ preserve = true } = {}) {
     const sel = document.getElementById('contrib-pool-select');
     if (!sel) return;
 
+    // Guarda el valor actual (si queremos preservar)
+    const prevValue = preserve ? sel.value : '';
+    const hasPrev   = prevValue && activePoolsCache.has(String(prevValue));
+
+    // Reconstruye opciones
     sel.innerHTML = '';
-    const placeholder = document.createElement('option');
     const size = activePoolsCache.size;
+
+    const placeholder = document.createElement('option');
     placeholder.value = '';
     placeholder.textContent = size ? 'Selecciona una cooperativa…' : 'No hay cooperativas activas';
+    // El placeholder solo queda "selected" si NO teníamos selección válida
+    placeholder.selected = !hasPrev;
     sel.appendChild(placeholder);
+
+    const truncate = (s, max=28) => (s && s.length > max) ? s.slice(0, max-1) + '…' : (s || '');
 
     [...activePoolsCache.values()]
         .sort((a,b) => Number(a.id) - Number(b.id))
@@ -1500,11 +1572,16 @@ function refreshContribDropdownFromCache() {
             const raisedXlm = Number(pool.raised) / 1e7;
             const pct = goalXlm > 0 ? Math.floor((raisedXlm/goalXlm)*100) : 0;
             const d = new Date(Number(pool.deadline) * 1000);
+            const name = pool.name ? truncate(pool.name, 28) : `#${pool.id}`;
             option.value = String(pool.id);
-            option.textContent = `#${pool.id} — ${pct}% — meta ${goalXlm} XLM — vence ${d.toLocaleDateString('es-CL')}`;
+            option.textContent = `${name} — ${pct}% — meta ${goalXlm} XLM — vence ${d.toLocaleDateString('es-CL')}`;
             sel.appendChild(option);
         });
 
+    // Vuelve a aplicar la selección si seguía siendo válida
+    if (hasPrev) sel.value = prevValue;
+
+    // Habilita/deshabilita el control
     sel.disabled = size === 0;
 }
 
@@ -1866,7 +1943,7 @@ function clearAllDeadlineTimers() {
             enableLoadPoolsButton();
             
             // Pintar snapshot rápido mientras llega la red (deshabilitado para evitar datos viejos)
-            const SHOW_SNAPSHOT = true; // o true si lo quieres
+            const SHOW_SNAPSHOT = false; // deshabilitado para evitar flickers durante testing
             if (SHOW_SNAPSHOT) {
                 try {
                     const raw = localStorage.getItem('pools_snapshot');
@@ -2628,6 +2705,13 @@ function clearAllDeadlineTimers() {
                 }
 
                 // Obtener datos del formulario
+                const rawName = (document.getElementById('pool-name')?.value || '').trim();
+                if (!rawName) {
+                    showAlert('❌ Ingresa un nombre para la cooperativa', 'danger');
+                    return;
+                }
+                const poolName = rawName.replace(/\s+/g, ' ').slice(0, 40); // limpio + máximo 40
+                
                 const supplierAddress = document.getElementById('supplier').value.trim();
                 const goalXlm = parseInt(document.getElementById('goal').value);
                 // Parsear fecha de vencimiento desde datetime-local
@@ -2857,13 +2941,18 @@ function clearAllDeadlineTimers() {
                     
                     // Cargar información del pool recién creado
                     if (poolId) {
+                        // 1) Preinyecta nombre para que getPoolInfo lo recoja y pinte bien
+                        activePoolsCache.set(String(poolId), { id: poolId, name: poolName });
+                        
                         const info = await getPoolInfo(poolId);         // 👉 devuelve { pool, status }
                         if (!info || !info.pool) return;
 
-                        const pool = info.pool;
+                        // 2) Asigna y re-renderiza por si acaso
+                        info.pool.name = poolName;
+                        renderPoolCard(poolId, info.pool, info.status);
 
                         // Recordar y refrescar UI
-                        rememberActivePool(pool);
+                        rememberActivePool(info.pool);
                         refreshContribDropdownFromCache();
 
                         // Persistir en backend (archivo data/pools_state.json)
@@ -2871,7 +2960,7 @@ function clearAllDeadlineTimers() {
                             await fetch('/api/pools/register', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ pool: normalizePoolForBackend(pool) }, jsonBigIntReplacer)
+                                body: JSON.stringify({ pool: normalizePoolForBackend(info.pool) }, jsonBigIntReplacer)
                             });
                         } catch (_) {}
 
@@ -2879,14 +2968,15 @@ function clearAllDeadlineTimers() {
                         try {
                             const raw = localStorage.getItem('pools_snapshot');
                             const list = raw ? JSON.parse(raw) : [];
-                            const without = list.filter(p => String(p.id) !== String(pool.id));
-                            const normalized = { ...normalizePoolForBackend(pool), status: info.status || 'active' };
+                            const without = list.filter(p => String(p.id) !== String(info.pool.id));
+                            const normalized = { ...normalizePoolForBackend(info.pool), status: info.status || 'active' };
                             without.push(normalized);
                             localStorage.setItem('pools_snapshot', JSON.stringify(without, jsonBigIntReplacer));
                         } catch (_) {}
                     }
                     
                     // Limpiar formulario y ocultar panel
+                    document.getElementById('pool-name').value = '';
                     document.getElementById('supplier').value = '';
                     document.getElementById('goal').value = '100';
                     // Reset fecha de vencimiento a +30 días
@@ -2921,9 +3011,18 @@ function clearAllDeadlineTimers() {
                             const poolId = await getPoolIdFromTx(response.hash);
                             
                             if (poolId) {
+                                // Preinyecta el nombre ANTES de consultar para que el render ya lo tenga
+                                activePoolsCache.set(String(poolId), { id: poolId, name: poolName });
+                                
                                 const info = await getPoolInfo(poolId);
                                 if (info && info.pool) {
                                     const pool = info.pool;
+                                    pool.name = poolName;             // cinturón y tirantes
+                                    renderPoolCard(poolId, pool, info.status);
+
+                                    // Recordar y refrescar UI
+                                    rememberActivePool(pool);
+                                    refreshContribDropdownFromCache();
 
                                     // Registrar en backend
                                     try {
@@ -3027,6 +3126,7 @@ function clearAllDeadlineTimers() {
         function normalizePoolForBackend(pool) {
             return {
                 id: Number(pool.id),
+                name: String(pool.name || ''),    // 👈 nuevo
                 creator: String(pool.creator),
                 supplier: String(pool.supplier),
                 token: String(pool.token),
@@ -3152,208 +3252,163 @@ function clearAllDeadlineTimers() {
                     return;
                 }
 
-                const amountXlm = parseFloat(document.getElementById('contrib-amount').value);
-
                 // Validaciones
                 if (!poolId || poolId <= 0) {
                     showAlert('❌ Ingresa un ID de pool válido', 'danger');
                     return;
                 }
 
+                // --- MONTO DEL USUARIO ---
+                const amountXlm = parseFloat(document.getElementById('contrib-amount').value);
+
+                // Validaciones básicas existentes…
                 if (!Number.isFinite(amountXlm) || amountXlm <= 0) {
                     showAlert('❌ La cantidad debe ser mayor a 0 XLM', 'danger');
                     return;
                 }
 
-                // Convertir XLM a stroops (7 decimales para XLM)
-                const amountStroops = BigInt(Math.round(amountXlm * 1e7));
+                // Convertir XLM a stroops
+                let amountStroops = BigInt(Math.round(amountXlm * 1e7));
 
-                // Log removed
-                // Log removed
-                // Log removed
+                // === (3) TOPE DURO: recorte previo al approve según RESTANTE ACTUAL ===
+                const remainingStroops = BigInt(pool.goal) - BigInt(pool.raised);
+                if (remainingStroops <= 0n) {
+                    showAlert('Esta cooperativa ya está financiada; no puedes aportar más.', 'warning');
+                    return;
+                }
 
-                // Mostrar panel de proceso
+                let effectiveStroops = amountStroops > remainingStroops ? remainingStroops : amountStroops;
+                if (effectiveStroops !== amountStroops) {
+                    const effXlm = (Number(effectiveStroops) / 1e7).toFixed(7);
+                    showAlert(`Tu aporte excedía el máximo permitido; se ajustó a ${effXlm} XLM.`, 'info');
+                }
+
+                // Mostrar panel de proceso (lo tienes ya)
                 showProcessPanel();
                 setProcessStep(1);
                 updateProcessStatus('Verificando balance de XLM...');
 
-                // Asegurar que tenemos XLM suficiente en el token SAC
-                // Log removed
-                await ensureWrappedXlm(amountStroops, pool.token);
+                // Asegura que tenemos XLM envuelto suficiente SOLO por el recorte "efectivo"
+                await ensureWrappedXlm(effectiveStroops, pool.token);
 
+                // --- APPROVE por el monto EFECTIVO ---
                 setProcessStep(2);
                 updateProcessStatus('Preparando aprobación...');
 
-                // Primero necesitamos aprobar el contrato para gastar nuestros XLM
-                // Log removed
-                
                 const account = await server.getAccount(userAddress);
-                
-                // Obtener ledger actual para expiration_ledger
                 const { sequence } = await server.getLatestLedger();
-                const expirationLedger = sequence + 1000; // 1000 ledgers de validez
-                
-                // 1) Construir operación de approve (4 argumentos: from, spender, amount, expiration)
-                // from = usuario que autoriza
-                const fromAddr = StellarSdk.Address.fromString(userAddress);
-                const fromScVal = StellarSdk.nativeToScVal(fromAddr, { type: 'address' });
-                
-                // spender = tu contrato (usar fromString para consistencia)
-                const spenderAddr = StellarSdk.Address.fromString(CONFIG.contractId);
-                const spenderScVal = StellarSdk.nativeToScVal(spenderAddr, { type: 'address' });
-                
-                // amount y expiration como ya tienes
-                const amountScVal = StellarSdk.nativeToScVal(amountStroops, { type: 'i128' });
-                const expScVal = StellarSdk.nativeToScVal(expirationLedger, { type: 'u32' });
-                
-                console.log('🔍 Debug approve args (4 argumentos):');
-                // Log removed
-                // Log removed
-                // Log removed
-                // Log removed
-                
+                const expirationLedger = sequence + 1000;
+
+                const fromScVal    = StellarSdk.nativeToScVal(StellarSdk.Address.fromString(userAddress), { type: 'address' });
+                const spenderScVal = StellarSdk.nativeToScVal(StellarSdk.Address.fromString(CONFIG.contractId), { type: 'address' });
+                const amountScVal  = StellarSdk.nativeToScVal(effectiveStroops, { type: 'i128' });
+                const expScVal     = StellarSdk.nativeToScVal(expirationLedger, { type: 'u32' });
+
                 const approveOperation = StellarSdk.Operation.invokeContractFunction({
-                    contract: pool.token, // Token específico de la pool
+                    contract: pool.token,
                     function: 'approve',
-                    args: [fromScVal, spenderScVal, amountScVal, expScVal] // 4 args: from, spender, amount, expiration
+                    args: [fromScVal, spenderScVal, amountScVal, expScVal]
                 });
 
-                // 2) Armar transacción base
                 let approveTransaction = new StellarSdk.TransactionBuilder(account, {
                     fee: StellarSdk.BASE_FEE,
                     networkPassphrase: CONFIG.networkPassphrase,
                 })
                 .addOperation(approveOperation)
-                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
+                .setTimeout(600)
                 .build();
 
-                // 3) Simular y preparar
                 setProcessStep(3);
                 updateProcessStatus('Simulando aprobación...');
-                // Log removed
                 const approveSimulation = await server.simulateTransaction(approveTransaction);
-                if (approveSimulation.error) {
-                    throw new Error('Error en simulación de approve: ' + approveSimulation.error);
-                }
+                if (approveSimulation.error) throw new Error('Error en simulación de approve: ' + approveSimulation.error);
 
                 setProcessStep(4);
                 updateProcessStatus('Preparando aprobación...');
-                // Log removed
                 approveTransaction = await server.prepareTransaction(approveTransaction);
 
-                // 4) Firmar y enviar approve
                 const signedApprove = await window.freighter.signTransaction(approveTransaction.toXDR(), {
                     networkPassphrase: CONFIG.networkPassphrase,
-                    address: userAddress  // unifica: usa 'address' para ser consistente
+                    address: userAddress
                 });
-
-                if (signedApprove.error) {
-                    throw new Error('Error firmando approve: ' + signedApprove.error);
-                }
+                if (signedApprove.error) throw new Error('Error firmando approve: ' + signedApprove.error);
 
                 const approveSignedXdr = signedApprove.signedTxXdr ?? signedApprove.signedXDR;
-                if (!approveSignedXdr) {
-                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
-                }
-
-                const approveToSubmit = StellarSdk.TransactionBuilder.fromXDR(
-                    approveSignedXdr,
-                    CONFIG.networkPassphrase
-                );
-
+                const approveToSubmit = StellarSdk.TransactionBuilder.fromXDR(approveSignedXdr, CONFIG.networkPassphrase);
                 const approveResponse = await server.sendTransaction(approveToSubmit);
-                // Log removed
-
-                // Manejar PENDING usando waitForTx (como en createPool)
                 if (approveResponse.status === 'PENDING') {
-                    // Log removed
                     const final = await waitForTx(approveResponse.hash);
-                    if (final.status !== 'SUCCESS') {
-                        throw new Error('Approve no se confirmó: ' + final.status);
-                    }
-                    // Log removed
+                    if (final.status !== 'SUCCESS') throw new Error('Approve no se confirmó: ' + final.status);
                 } else if (approveResponse.status !== 'SUCCESS') {
                     throw new Error('Approve falló: ' + approveResponse.status);
                 }
 
-                // Ahora crear la transacción de contribute
+                // === DOBLE CHEQUEO ANTI-CARRERA ANTES DE CONTRIBUTE ===
+                // (otra contribución pudo entrar en medio)
+                const latest = await getPoolInfo(poolId); // read-only
+                if (!latest || !latest.pool) throw new Error('No se pudo refrescar el estado de la cooperativa');
+                const latestRemaining = BigInt(latest.pool.goal) - BigInt(latest.pool.raised);
+                if (latestRemaining <= 0n) {
+                    showAlert('Mientras preparabas la transacción, la cooperativa llegó al tope.', 'warning');
+                    return;
+                }
+                if (effectiveStroops > latestRemaining) {
+                    effectiveStroops = latestRemaining; // recorte final
+                }
+
+                // --- CONTRIBUTE por el EFECTIVO (recortado) ---
                 setProcessStep(5);
                 updateProcessStatus('Preparando contribución...');
-                // Log removed
-                
-                // 1) Construir operación de contribute
-                const userAddr = StellarSdk.Address.fromString(userAddress);
-                const userScVal = StellarSdk.nativeToScVal(userAddr, { type: 'address' });
+
+                const userScVal = StellarSdk.nativeToScVal(StellarSdk.Address.fromString(userAddress), { type: 'address' });
                 const contributeOperation = StellarSdk.Operation.invokeContractFunction({
                     contract: CONFIG.contractId,
                     function: 'contribute',
                     args: [
-                        StellarSdk.nativeToScVal(poolId, { type: 'u32' }), // pool_id
-                        userScVal,                                         // user: Address
-                        StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }) // amount
+                        StellarSdk.nativeToScVal(poolId, { type: 'u32' }),
+                        userScVal,
+                        StellarSdk.nativeToScVal(effectiveStroops, { type: 'i128' })
                     ]
                 });
 
-                // 2) Armar transacción base
                 let contributeTransaction = new StellarSdk.TransactionBuilder(account, {
                     fee: StellarSdk.BASE_FEE,
                     networkPassphrase: CONFIG.networkPassphrase,
                 })
                 .addOperation(contributeOperation)
-                .setTimeout(600) // 10 minutos para dar tiempo a Freighter
+                .setTimeout(600)
                 .build();
 
-                // 3) Simular y preparar
-                // Log removed
                 const contributeSimulation = await server.simulateTransaction(contributeTransaction);
-                if (contributeSimulation.error) {
-                    throw new Error('Error en simulación de contribute: ' + contributeSimulation.error);
-                }
+                if (contributeSimulation.error) throw new Error('Error en simulación de contribute: ' + contributeSimulation.error);
 
-                // Log removed
                 contributeTransaction = await server.prepareTransaction(contributeTransaction);
 
-                // 4) Firmar y enviar contribute
                 const signedContribute = await window.freighter.signTransaction(contributeTransaction.toXDR(), {
                     networkPassphrase: CONFIG.networkPassphrase,
-                    address: userAddress  // unifica: usa 'address' para ser consistente
+                    address: userAddress
                 });
-
-                if (signedContribute.error) {
-                    throw new Error('Error firmando contribute: ' + signedContribute.error);
-                }
+                if (signedContribute.error) throw new Error('Error firmando contribute: ' + signedContribute.error);
 
                 const contributeSignedXdr = signedContribute.signedTxXdr ?? signedContribute.signedXDR;
-                if (!contributeSignedXdr) {
-                    throw new Error('Freighter no retornó XDR firmada (signedTxXdr/signedXDR)');
-                }
-
-                const contributeToSubmit = StellarSdk.TransactionBuilder.fromXDR(
-                    contributeSignedXdr,
-                    CONFIG.networkPassphrase
-                );
-
+                const contributeToSubmit = StellarSdk.TransactionBuilder.fromXDR(contributeSignedXdr, CONFIG.networkPassphrase);
                 const contributeResponse = await server.sendTransaction(contributeToSubmit);
-                // Log removed
 
-                // Manejar PENDING usando waitForTx (como en createPool y approve)
                 if (contributeResponse.status === 'PENDING') {
                     storeLastTransaction(contributeResponse.hash);
                     showProcessHash(contributeResponse.hash);
                     updateProcessStatus('⏳ Esperando confirmación de contribución...');
                     const final = await waitForTx(contributeResponse.hash);
-                    if (final.status !== 'SUCCESS') {
-                        throw new Error(`La contribución falló on-chain: ${final.status}`);
-                    }
-                    // Log removed
+                    if (final.status !== 'SUCCESS') throw new Error(`La contribución falló on-chain: ${final.status}`);
                 } else if (contributeResponse.status !== 'SUCCESS') {
                     throw new Error(`La contribución no fue aceptada: ${contributeResponse.status}`);
                 }
 
-                // Si llegamos aquí, fue SUCCESS on-chain
+                // Éxito
                 setProcessStep(6);
                 updateProcessStatus('✅ Contribución confirmada');
-                showAlert(`✅ ¡Contribución exitosa! ${amountXlm} XLM al pool ${poolId}`, 'success');
+                const effXlm = (Number(effectiveStroops) / 1e7).toFixed(7);
+                showAlert(`✅ ¡Contribución exitosa! ${effXlm} XLM al pool ${poolId}`, 'success');
 
                 // 🔄 Refrescar la tarjeta del pool (con pequeño retardo para consistencia eventual)
                 try {
@@ -3699,6 +3754,10 @@ function clearAllDeadlineTimers() {
 
                 const pool = StellarSdk.scValToNative(scv);
                 // Datos del pool decodificados
+                
+                // Preservar nombre del cache si existe
+                const existing = activePoolsCache.get(String(poolId));
+                if (existing?.name && !pool.name) pool.name = existing.name;
 
                 // Calcular estado del pool
                 const now = Math.floor(Date.now() / 1000);
@@ -3759,6 +3818,7 @@ function clearAllDeadlineTimers() {
 
             // Calcular progreso
             const progress = Number(pool.raised) / Number(pool.goal) * 100;
+            const progressPct = Math.min(progress, 100); // 👈 capar a 100% máximo
             const goalXlm = Number(pool.goal) / 10000000;
             const raisedXlm = Number(pool.raised) / 10000000;
             const deadline = new Date(Number(pool.deadline) * 1000);
@@ -3778,9 +3838,10 @@ function clearAllDeadlineTimers() {
                 'expired': 'Expirado'
             }[status] || 'Activo';
 
+            const displayName = (pool.name && pool.name.trim()) ? pool.name.trim() : `Pool #${poolId}`;
             poolCard.innerHTML = `
                 <div class="pool-header">
-                    <span class="pool-id">Pool #${poolId}</span>
+                    <span class="pool-name" title="${displayName}">${displayName}</span>
                     <span class="pool-status ${statusClass}">${statusText}</span>
                 </div>
                 
@@ -3799,7 +3860,7 @@ function clearAllDeadlineTimers() {
                     </div>
                     <div class="info-item">
                         <div class="info-label">Progreso</div>
-                        <div class="info-value">${progress.toFixed(1)}%</div>
+                        <div class="info-value">${progressPct.toFixed(1)}%</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Deadline</div>
@@ -3817,6 +3878,7 @@ function clearAllDeadlineTimers() {
                         </small>
                     </div>
                 ` : ''}
+                
             `;
         }
 
@@ -3904,44 +3966,6 @@ function clearAllDeadlineTimers() {
           refreshContribDropdownFromCache();
         }
 
-        // Función de bootstrap para reconstruir pools desde on-chain
-        async function devBootstrapPools(from=1, to=120) {
-            if (!isConnected || !userAddress) {
-                showAlert('Conecta la wallet para hacer el bootstrap', 'danger');
-                return;
-            }
-            const found = [];
-            showAlert('Iniciando bootstrap...', 'info');
-            
-            for (let i=from;i<=to;i++) {
-                try {
-                    const r = await getPoolInfo(i); // ya pinta tarjeta y devuelve { pool, status }
-                    if (r && r.pool) found.push({ ...normalizePoolForBackend(r.pool), status: r.status });
-                } catch (_) { /* no existe ese id */ }
-                await new Promise(r=>setTimeout(r, 120)); // pequeño respiro al RPC
-            }
-            
-            if (found.length) {
-                try {
-                    const response = await fetch('/api/pools/register-batch', {
-                        method:'POST', 
-                        headers:{'Content-Type':'application/json'},
-                        body: JSON.stringify({ pools: found })
-                    });
-                    if (response.ok) {
-                        showAlert(`Bootstrap: registradas ${found.length} cooperativas`, 'success');
-                        // Recargar la lista
-                        await loadActivePools();
-                    } else {
-                        showAlert('Error en bootstrap: ' + response.status, 'danger');
-                    }
-                } catch (e) {
-                    showAlert('Error enviando bootstrap: ' + e.message, 'danger');
-                }
-            } else {
-                showAlert('Bootstrap: no se encontró ninguna cooperativa en el rango', 'info');
-            }
-        }
 
         async function loadActivePools() {
             try {
@@ -4050,62 +4074,83 @@ function clearAllDeadlineTimers() {
             }
         }
 
-        // Funciones para manejar el estado visual del proceso
+        // Funciones mínimas para el panel de proceso (necesarias para createPool)
         function showProcessPanel() {
-            const panel = document.getElementById('process-status-panel');
-            panel.style.display = 'block';
-            resetProcessSteps();
-        }
-
-        function hideProcessPanel() {
-            const panel = document.getElementById('process-status-panel');
-            panel.style.display = 'none';
-        }
-
-        function resetProcessSteps() {
-            document.querySelectorAll('.process-step')
-                .forEach(el => el.classList.remove('active', 'completed'));
+            // Función vacía - el panel ya no existe pero las llamadas no fallan
         }
 
         function setProcessStep(stepNumber, status = 'active') {
-            const steps = [...document.querySelectorAll('.process-step')];
-            steps.forEach((el, idx) => {
-                const i = idx + 1;
-                if (i < stepNumber) { 
-                    el.classList.remove('active'); 
-                    el.classList.add('completed'); 
-                }
-                else if (i === stepNumber) { 
-                    el.classList.remove('completed'); 
-                    el.classList.add(status); 
-                }
-            });
+            // Función vacía - el panel ya no existe pero las llamadas no fallan
         }
 
         function updateProcessStatus(text, isActive = true) {
-            const statusText = document.getElementById('process-status-text');
-            const statusBadge = document.getElementById('process-status-badge');
-            
-            statusText.textContent = text;
-            
-            if (isActive) {
-                statusBadge.style.background = 'rgba(255, 255, 255, 0.2)';
-            } else {
-                statusBadge.style.background = 'rgba(34, 197, 94, 0.2)';
-            }
+            // Función vacía - el panel ya no existe pero las llamadas no fallan
+        }
+
+        function hideProcessPanel() {
+            // Función vacía - el panel ya no existe pero las llamadas no fallan
         }
 
         function showProcessHash(hash) {
-            const hashDisplay = document.getElementById('process-hash-display');
-            const hashValue = document.getElementById('process-hash-value');
-            
-            hashValue.textContent = hash;
-            hashDisplay.style.display = 'block';
+            // Función vacía - el panel ya no existe pero las llamadas no fallan
         }
 
         function hideProcessHash() {
-            const hashDisplay = document.getElementById('process-hash-display');
-            hashDisplay.style.display = 'none';
+            // Función vacía - el panel ya no existe pero las llamadas no fallan
+        }
+
+        // --- Helper: conversión XLM/stroops ---
+        function stroopsToXlm(stroops) {
+            return Number(stroops) / 1e7;
+        }
+        
+        function xlmToStroops(xlm) {
+            return BigInt(Math.floor(Number(xlm) * 1e7));
+        }
+
+        /** Lee on-chain y fija el "máximo" del input según lo que falta de la pool */
+        async function setContribMaxFor(poolId) {
+            const res = await getPoolInfo(poolId);         // ya tienes esta función; devuelve { pool, status }
+            if (!res || !res.pool) return;
+
+            const pool = res.pool;
+            const remaining = BigInt(pool.goal) - BigInt(pool.raised);
+            const input = document.getElementById('contrib-amount');
+            const btn   = document.getElementById('contrib-btn');
+
+            if (!input || !btn) return;
+
+            if (remaining <= 0n || pool.finalized) {
+                input.max = '0';
+                input.placeholder = 'Meta alcanzada';
+                input.value = '';
+                btn.disabled = true;
+                showAlert('Esta cooperativa ya alcanzó su meta o no le queda cupo.', 'warning');
+                return;
+            }
+
+            const maxXlm = stroopsToXlm(remaining);
+            input.max = String(maxXlm);
+            input.placeholder = `máx ${maxXlm} XLM`;
+            input.dataset.maxStroops = remaining.toString(); // lo reutilizaremos en el submit
+            btn.disabled = false;
+            
+            // Cinturón y tirantes: asegurar que la selección se mantiene
+            const sel = document.getElementById('contrib-pool-select');
+            if (sel) sel.value = String(poolId);
+        }
+
+        /** Si el usuario teclea más del máximo, lo recortamos y avisamos */
+        function enforceContribInputMax() {
+            const input = document.getElementById('contrib-amount');
+            if (!input) return;
+            const max = parseFloat(input.max || '0');
+            const val = parseFloat(input.value || '0');
+            if (max > 0 && val > max) {
+                input.value = String(max);
+                showAlert(`Se ajustó automáticamente al máximo permitido (${max} XLM).`, 'info');
+            }
+            updateConversion('contrib-amount', 'contrib-conversion');
         }
 
         // --- Helper: llamada cruda al RPC (asegura usar "hash")
@@ -4237,6 +4282,21 @@ function clearAllDeadlineTimers() {
             
             // Inicializar carrusel de plantillas
             generateCarouselCards();
+            
+            // Limitar por pool seleccionada
+            const selPool = document.getElementById('contrib-pool-select');
+            if (selPool) {
+                selPool.addEventListener('change', e => {
+                    const id = Number(e.target.value);
+                    if (Number.isFinite(id) && id > 0) setContribMaxFor(id);
+                });
+            }
+
+            // Limitar mientras escribe
+            const amt = document.getElementById('contrib-amount');
+            if (amt) {
+                amt.addEventListener('input', enforceContribInputMax);
+            }
         });
     </script>
 </body>

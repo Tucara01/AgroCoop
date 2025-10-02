@@ -3,6 +3,11 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
+// Cargar variables desde .env.local (si existe)
+try { require('dotenv').config({ path: '.env.local' }); } catch (_) {}
+
+const ADMIN_CODE = process.env.POOLS_ADMIN_CODE || process.env.ADMIN_CODE || '';
+
 // 👇 importa el objeto completo y luego extraes lo que necesitas
 const StellarSdk = require('@stellar/stellar-sdk');
 
@@ -34,6 +39,7 @@ const rpcServer = new StellarSdk.SorobanRpc.Server(RPC_URL, { allowHttp: true })
 // Cache en memoria: en prod, usa Redis/SQLite
 const pools = new Map();
 let lastScannedLedger = 0;
+const hidden = new Set(); // ids ocultos
 
 // Buffer para contribuciones huérfanas (cuando la pool no existe aún)
 const pendingRaised = new Map(); // pid -> BigInt
@@ -122,6 +128,7 @@ function saveState() {
     const payload = {
       lastScannedLedger,
       pools: [...pools.values()], // guardamos objetos ya "planos"
+      hidden: [...hidden],
       savedAt: new Date().toISOString()
     };
     fs.writeFileSync(STATE_FILE, JSON.stringify(payload, null, 2));
@@ -138,6 +145,7 @@ function loadState() {
         pools.clear();
         for (const p of data.pools || []) pools.set(String(p.id), p);
         lastScannedLedger = Math.max(0, Number(data.lastScannedLedger || 0));
+        (data.hidden || []).forEach(id => hidden.add(String(id)));
         // Estado restaurado
     } catch (e) {
         // Error cargando pools_state
@@ -150,6 +158,12 @@ function appendTxLog(entry) {
     try { if (fs.existsSync(TX_LOG)) arr = JSON.parse(fs.readFileSync(TX_LOG,'utf8')); } catch {}
     arr.push(entry);
     fs.writeFileSync(TX_LOG, JSON.stringify(arr, null, 2));
+}
+
+// Helper para validar el código de administrador
+function checkAdminCode(req) {
+  const code = (req.headers['x-admin-code'] || req.body?.code || req.query?.code || '').toString();
+  return ADMIN_CODE && code && code === ADMIN_CODE;
 }
 
 // Middleware de logging personalizado
@@ -249,7 +263,9 @@ async function hydrateFromEvents(fromLedger) {
 
                 // PC / PoolCreated
                 if (tagNorm === 'pc' || /pool.*created|created|create_pool/i.test(tagNorm)) {
+                    const prev = pools.get(key);
                     const obj = {
+                        ...(prev || {}),  // 👈 conserva prev.name si existía
                         ...((typeof native === 'object' && native) || {}),
                         id: pid,
                         goal: String((native?.goal ?? native?.target ?? 0)),
@@ -291,7 +307,8 @@ async function hydrateFromEvents(fromLedger) {
                 } else if (pid) {
                     // ⚙️ Fallback genérico: si veo un id pero no reconozco tag,
                     // creo/actualizo un contenedor con campos mínimos
-                    const p = pools.get(key) || { id: pid, goal: "0", raised: "0", deadline: 0, finalized: false };
+                    const prev = pools.get(key) || { id: pid, goal: "0", raised: "0", deadline: 0, finalized: false };
+                    const p = { ...prev };
                     // si el payload trae algo útil, copiarlo
                     if (native && typeof native === 'object') {
                         if (native.goal     != null) p.goal     = String(native.goal);
@@ -358,12 +375,13 @@ app.get('/api/pools', async (req, res) => {
         await hydrateFromEvents(doFull ? 0 : undefined);
         
         const now = Math.floor(Date.now()/1000);
-        const list = [...pools.values()].map(p => ({
+        const listAll = [...pools.values()].map(p => ({
             ...p,
             status: p.finalized ? 'finalized'
                   : (now > Number(p.deadline) ? 'expired'
                   : (BigInt(p.raised) >= BigInt(p.goal) ? 'funded' : 'active'))
         }));
+        const list = listAll.filter(p => !hidden.has(String(p.id)));
         
         // Pools en memoria
 
@@ -374,9 +392,13 @@ app.get('/api/pools', async (req, res) => {
             await hydrateFromEvents(0);
             const retry = [...pools.values()].map(p => ({ ...p, status: p.finalized ? 'finalized' :
                 (now > Number(p.deadline) ? 'expired' : (BigInt(p.raised) >= BigInt(p.goal) ? 'funded' : 'active')) }));
-            if (retry.length > 0) {
+            
+            // ⛔️ FIX: aplicar filtro de "hidden" también en el fallback
+            const retryVisible = retry.filter(p => !hidden.has(String(p.id)));
+            
+            if (retryVisible.length > 0) {
                 const showAll = String(req.query.all) === '1';
-                const actionable = retry.filter(p => {
+                const actionable = retryVisible.filter(p => {
                     const raised = BigInt(p.raised);
                     const goal   = BigInt(p.goal);
                     const expired = now > Number(p.deadline);
@@ -389,7 +411,7 @@ app.get('/api/pools', async (req, res) => {
                     if (!p.finalized && funded) return true;
                     return false;
                 });
-                const out = showAll ? retry : actionable;
+                const out = showAll ? retryVisible : actionable;
                 // Retry exitoso
                 return res.json({ pools: out });
             }
@@ -486,6 +508,7 @@ app.post('/api/pools/register', (req, res) => {
         const normalized = {
             ...pool,
             id: Number(id),
+            name: String(pool.name || ''),  // 👈 nuevo
             goal: String(pool.goal),
             raised: String(pool.raised ?? 0),
             deadline: Number(pool.deadline),
@@ -515,6 +538,7 @@ app.post('/api/pools/register-batch', (req, res) => {
             pools.set(id, {
                 ...pool,
                 id: Number(id),
+                name: String(pool.name || ''),  // 👈 nuevo
                 goal: String(pool.goal ?? '0'),
                 raised: String(pool.raised ?? '0'),
                 deadline: Number(pool.deadline ?? 0),
@@ -531,6 +555,31 @@ app.post('/api/pools/register-batch', (req, res) => {
     }
 });
 
+// Endpoints para ocultar/mostrar pools (requieren código admin)
+app.post('/api/pools/hide', (req, res) => {
+  if (!checkAdminCode(req)) return res.status(403).json({ error: 'forbidden' });
+  const id = String(req.body?.id ?? '');
+  if (!id) return res.status(400).json({ error: 'missing id' });
+  hidden.add(id);
+  saveState();
+  return res.json({ ok: true });
+});
+
+app.post('/api/pools/unhide', (req, res) => {
+  if (!checkAdminCode(req)) return res.status(403).json({ error: 'forbidden' });
+  const id = String(req.body?.id ?? '');
+  if (!id) return res.status(400).json({ error: 'missing id' });
+  hidden.delete(id);
+  saveState();
+  return res.json({ ok: true });
+});
+
+// Listar pools ocultas (solo admin)
+app.get('/api/pools/hidden', (req, res) => {
+  if (!checkAdminCode(req)) return res.status(403).end();
+  return res.json({ ids: [...hidden] });
+});
+
 // Manejador de errores 404
 app.use((req, res) => {
     res.status(404).send(`
@@ -542,7 +591,7 @@ app.use((req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-    // Servidor iniciado
+    console.log(`🚀 Servidor AgroCoop iniciado en puerto ${PORT} | Admin code: ${ADMIN_CODE ? '✅ Configurado' : '❌ No configurado'}`);
 });
 
 // Hidratación inicial al arrancar

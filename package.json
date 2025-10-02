@@ -11,6 +11,7 @@
     "@stellar/freighter-api": "^5.0.0",
     "@stellar/stellar-sdk": "^12.1.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^4.21.2"
   },
   "keywords": [
