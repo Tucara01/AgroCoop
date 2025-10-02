@@ -126,7 +126,7 @@ function saveState() {
     };
     fs.writeFileSync(STATE_FILE, JSON.stringify(payload, null, 2));
   } catch (e) {
-    console.warn('⚠️ No se pudo persistir pools_state:', e);
+    // Error persistiendo pools_state
   }
 }
 
@@ -138,9 +138,9 @@ function loadState() {
         pools.clear();
         for (const p of data.pools || []) pools.set(String(p.id), p);
         lastScannedLedger = Math.max(0, Number(data.lastScannedLedger || 0));
-        console.log(`📂 Estado restaurado: ${pools.size} pools, lastLedger=${lastScannedLedger}`);
+        // Estado restaurado
     } catch (e) {
-        console.warn('⚠️ No se pudo cargar pools_state:', e);
+        // Error cargando pools_state
     }
 }
 
@@ -155,7 +155,7 @@ function appendTxLog(entry) {
 // Middleware de logging personalizado
 app.use((req, res, next) => {
     const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] ${req.method} ${req.url} - IP: ${req.ip}`);
+    // Request logged
     next();
 });
 
@@ -193,7 +193,7 @@ async function hydrateFromEvents(fromLedger) {
           ? 1
           : clampPos(fromLedger || lastScannedLedger || (latest.sequence - DEFAULT_WINDOW));
 
-        console.log(`🔄 Hidratando pools desde ledger ${start}...`);
+        // Hidratando pools
 
         let paginationToken;
         let processed = 0;
@@ -212,7 +212,7 @@ async function hydrateFromEvents(fromLedger) {
               // 1) startLedger <= 0
               if (/must be positive/i.test(msg)) {
                 start = clampPos(latest.sequence - DEFAULT_WINDOW);
-                console.log(`↪️ Ajustando startLedger a ${start} (positivo)`);
+                // Ajustando startLedger
                 paginationToken = undefined;
                 continue retryFetch;
               }
@@ -221,17 +221,17 @@ async function hydrateFromEvents(fromLedger) {
               if (m) {
                 const min = Number(m[1]), max = Number(m[2]);
                 if (start < min) {
-                  console.log(`↪️ Ajuste: start ${start} < min ${min} → usando ${min}`);
+                  // Ajuste startLedger
                   start = min; paginationToken = undefined; continue retryFetch;
                 }
                 if (start > max) {
                   const newStart = Math.max(min, max - DEFAULT_WINDOW);
-                  console.log(`↪️ Ajuste: start ${start} > max ${max} → usando ${newStart}`);
+                  // Ajuste startLedger
                   start = newStart; paginationToken = undefined; continue retryFetch;
                 }
               }
               // Otro error: registra y sal
-              console.error('❌ Error hidratando desde eventos:', e);
+              // Error hidratando
               break;
             }
 
@@ -263,11 +263,11 @@ async function hydrateFromEvents(fromLedger) {
                     if (typeof buff === 'bigint' && buff !== 0n) {
                         obj.raised = (BigInt(obj.raised ?? '0') + buff).toString();
                         pendingRaised.delete(key);
-                        console.log(`💰 Pool #${pid} aplicando contribuciones huérfanas: +${buff} -> total ${obj.raised}`);
+                        // Aplicando contribuciones huérfanas
                     }
                     
                     pools.set(key, obj);
-                    console.log(`📦 Pool #${pid} creada: ${JSON.stringify(obj)}`);
+                    // Pool creada
                 }
                 // CTR / Contributed
                 else if (tagNorm === 'ctr' || /contribut|contribute/i.test(tagNorm)) {
@@ -276,18 +276,18 @@ async function hydrateFromEvents(fromLedger) {
                     if (p) {
                         const prev = BigInt(p.raised ?? '0');
                         p.raised = (prev + delta).toString();
-                        console.log(`💰 Pool #${pid} contribución: +${delta} -> total ${p.raised}`);
+                        // Contribución aplicada
                     } else {
                         // Contribución huérfana: la pool no existe aún, la guardamos para después
                         const cur = pendingRaised.get(key) ?? 0n;
                         pendingRaised.set(key, cur + delta);
-                        console.log(`💰 Pool #${pid} contribución huérfana: +${delta} (buffer: ${cur + delta})`);
+                        // Contribución huérfana
                     }
                 }
                 // FN / Finalized
                 else if (tagNorm === 'fn' || /finaliz/i.test(tagNorm)) {
                     const p = pools.get(key);
-                    if (p) { p.finalized = true; console.log(`✅ Pool #${pid} finalizada`); }
+                    if (p) { p.finalized = true; }
                 } else if (pid) {
                     // ⚙️ Fallback genérico: si veo un id pero no reconozco tag,
                     // creo/actualizo un contenedor con campos mínimos
@@ -316,9 +316,9 @@ async function hydrateFromEvents(fromLedger) {
         // 🔸 Persistimos a disco cada vez que hidratamos algo
         if (processed > 0) saveState();
 
-        console.log(`✅ Hidratación completada. Eventos procesados: ${processed}`);
+        // Hidratación completada
         } catch (e) {
-            console.error('❌ Error hidratando desde eventos:', e);
+            // Error hidratando
         } finally {
             hydratingPromise = null;
         }
@@ -333,24 +333,24 @@ app.get('/', (req, res) => {
 
 // Ruta para obtener información del contrato (para futuras extensiones)
 app.get('/api/contract-info', (req, res) => {
-    console.log('📊 [API] Solicitud de información del contrato');
+    // Solicitud de información del contrato
     const contractInfo = {
         contractId: 'CBAID77FC57C6LNDGPS2RTTWA6RZY72LXJYQMLZMX3NBO4VSWGXLTVT2',
         tokenId: 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC',
         network: 'testnet',
         rpcUrl: 'https://soroban-testnet.stellar.org'
     };
-    console.log('📊 [API] Información del contrato enviada:', contractInfo);
+    // Información del contrato enviada
     res.json(contractInfo);
 });
 
 // Endpoints públicos para pools
 app.get('/api/pools', async (req, res) => {
     try {
-        console.log('📊 [API] Solicitud de todas las pools');
+        // Solicitud de todas las pools
 
         if (String(req.query.resync) === '1') {
-            console.log('🧹 Resync solicitado: NO se borra cache; solo reiniciamos puntero');
+            // Resync solicitado
             lastScannedLedger = 0; // fuerza hydrateFromEvents(0)
         }
 
@@ -365,12 +365,12 @@ app.get('/api/pools', async (req, res) => {
                   : (BigInt(p.raised) >= BigInt(p.goal) ? 'funded' : 'active'))
         }));
         
-        console.log(`📊 [API] pools en memoria: ${list.length}`);
+        // Pools en memoria
 
         // Fallback: si después de hidratar seguimos en 0,
         // intenta una segunda pasada forzada desde 0 y reevalúa.
         if (list.length === 0 && String(req.query._retried) !== '1') {
-            console.log('⚠️ Lista vacía tras hydrate; forzando segunda pasada...');
+            // Lista vacía, forzando segunda pasada
             await hydrateFromEvents(0);
             const retry = [...pools.values()].map(p => ({ ...p, status: p.finalized ? 'finalized' :
                 (now > Number(p.deadline) ? 'expired' : (BigInt(p.raised) >= BigInt(p.goal) ? 'funded' : 'active')) }));
@@ -390,7 +390,7 @@ app.get('/api/pools', async (req, res) => {
                     return false;
                 });
                 const out = showAll ? retry : actionable;
-                console.log(`📊 [API] Retry exitoso: ${out.length} pools${showAll ? ' (all)' : ' (actionable)'}`);
+                // Retry exitoso
                 return res.json({ pools: out });
             }
         }
@@ -413,10 +413,10 @@ app.get('/api/pools', async (req, res) => {
         });
 
         const out = showAll ? list : actionable; // con ?filter=simple, showAll = true
-        console.log(`📊 [API] Enviando ${out.length} pools${showAll ? ' (all)' : ' (actionable)'}`);
+        // Enviando pools
         res.json({ pools: out });
     } catch (e) {
-        console.error('❌ [API] Error obteniendo pools:', e);
+        // Error obteniendo pools
         res.status(500).json({ error: String(e) });
     }
 });
@@ -424,17 +424,17 @@ app.get('/api/pools', async (req, res) => {
 app.get('/api/pools/:id', async (req, res) => {
     try {
         const poolId = String(Number(req.params.id));
-        console.log(`📊 [API] Solicitud de pool #${poolId}`);
+        // Solicitud de pool específica
         await hydrateFromEvents();
         const p = pools.get(poolId);
         if (!p) {
-            console.log(`❌ [API] Pool #${poolId} no encontrada`);
+            // Pool no encontrada
             return res.status(404).json({ error: 'Pool not found' });
         }
-        console.log(`📊 [API] Enviando pool #${poolId}`);
+        // Enviando pool
         res.json(p);
     } catch (e) {
-        console.error(`❌ [API] Error obteniendo pool #${req.params.id}:`, e);
+        // Error obteniendo pool
         res.status(500).json({ error: String(e) });
     }
 });
@@ -446,11 +446,7 @@ app.post('/api/log', (req, res) => {
     
     const logMessage = `[${timestamp}] [${level.toUpperCase()}] [${operation || 'FRONTEND'}] ${message}`;
     
-    if (data) {
-        console.log(logMessage, data);
-    } else {
-        console.log(logMessage);
-    }
+    // Log message processed
     
     res.json({ success: true, logged: true });
 });
@@ -460,19 +456,7 @@ app.post('/api/log-transaction', (req, res) => {
     const { operation, details, status, error } = req.body;
     const timestamp = new Date().toISOString();
     
-    console.log(`\n🔄 [TRANSACTION] [${timestamp}] ${operation}`);
-    console.log('📋 Detalles:', details);
-    
-    if (status === 'success') {
-        console.log('✅ Estado: ÉXITO');
-    } else if (status === 'error') {
-        console.log('❌ Estado: ERROR');
-        console.log('🚨 Error:', error);
-    } else {
-        console.log(`📊 Estado: ${status}`);
-    }
-    
-    console.log('─'.repeat(50));
+    // Transaction logged
     
     // 💾 persistir también
     appendTxLog({ timestamp, operation, details, status, error: error || null });
@@ -485,13 +469,7 @@ app.post('/api/log-error', (req, res) => {
     const { error, context, stack } = req.body;
     const timestamp = new Date().toISOString();
     
-    console.log(`\n🚨 [ERROR] [${timestamp}]`);
-    console.log('📍 Contexto:', context);
-    console.log('💥 Error:', error);
-    if (stack) {
-        console.log('📚 Stack trace:', stack);
-    }
-    console.log('─'.repeat(50));
+    // Error logged
     
     res.json({ success: true, logged: true });
 });
@@ -516,10 +494,10 @@ app.post('/api/pools/register', (req, res) => {
 
         pools.set(String(normalized.id), normalized);
         saveState(); // 💾 persiste en data/pools_state.json
-        console.log(`📝 Pool #${id} registrada por el frontend`);
+        // Pool registrada
         res.json({ ok: true });
     } catch (e) {
-        console.error('❌ register pool:', e);
+        // Error registrando pool
         res.status(500).json({ error: String(e) });
     }
 });
@@ -545,10 +523,10 @@ app.post('/api/pools/register-batch', (req, res) => {
             count++;
         }
         saveState();
-        console.log(`📝 Bootstrap: registradas ${count} pools en lote`);
+        // Bootstrap completado
         res.json({ ok: true, count });
     } catch (e) {
-        console.error('❌ Error en bootstrap:', e);
+        // Error en bootstrap
         res.status(500).json({ error: String(e) });
     }
 });
@@ -564,40 +542,23 @@ app.use((req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-    console.log(`
-🚀 Servidor iniciado exitosamente!
-
-📱 dApp de Compra Colectiva corriendo en:
-   http://localhost:${PORT}
-
-📊 Información del contrato:
-   Contract ID: CBAID77FC57C6LNDGPS2RTTWA6RZY72LXJYQMLZMX3NBO4VSWGXLTVT2
-   Token ID: CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
-   Network: Stellar Testnet
-
-💡 Para usar la dApp:
-   1. Abre http://localhost:${PORT} en tu navegador
-   2. Instala Freighter Wallet si no lo tienes
-   3. Conecta tu wallet y comienza a probar!
-
-⛔ Para detener el servidor: Ctrl+C
-    `);
+    // Servidor iniciado
 });
 
 // Hidratación inicial al arrancar
 (async () => {
     try {
-        console.log('⏳ Hidratando pools iniciales…');
+        // Hidratando pools iniciales
         await hydrateFromEvents(0); // full scan al boot
-        console.log('✅ Hidratación inicial lista.');
+        // Hidratación inicial lista
     } catch (e) {
-        console.warn('No se pudo hidratar al inicio:', e);
+        // No se pudo hidratar al inicio
     }
 })();
 
 // Manejo de cierre del servidor
 process.on('SIGINT', () => {
     try { saveState(); } catch(_) {}
-    console.log('\n👋 Cerrando servidor...');
+    // Cerrando servidor
     process.exit(0);
 });

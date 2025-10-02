@@ -13,7 +13,7 @@
         window.freighterApi = freighterApi;
         window.freighter = freighterApi; // Alias para compatibilidad
         
-        console.log('✅ Freighter API importado correctamente:', freighterApi);
+        // Freighter API importado
         
         // Disparar evento personalizado cuando esté listo
         window.dispatchEvent(new CustomEvent('freighter-ready'));
@@ -723,6 +723,210 @@
                 padding: 0 30px;
             }
         }
+
+        /* Pools Scroll Styles */
+        .pools-scroll-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+
+        .pools-scroll-wrapper {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 10px 0;
+            scrollbar-width: thin;
+            scrollbar-color: #8B4513 #f5f5dc;
+        }
+
+        .pools-scroll-wrapper::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .pools-scroll-wrapper::-webkit-scrollbar-track {
+            background: #f5f5dc;
+            border-radius: 4px;
+        }
+
+        .pools-scroll-wrapper::-webkit-scrollbar-thumb {
+            background: #8B4513;
+            border-radius: 4px;
+        }
+
+        .pools-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #A0522D;
+        }
+
+        .pools-grid {
+            display: flex;
+            gap: 20px;
+            padding: 0 10px;
+            min-width: max-content;
+        }
+
+        .pool-card-scroll {
+            flex: 0 0 300px;
+            background: linear-gradient(145deg, #f5f5dc 0%, #f0e68c 100%);
+            border: 2px solid #8B4513;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            min-height: 280px;
+        }
+
+        .pool-card-scroll:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        @media (max-width: 768px) {
+            .pool-card-scroll {
+                flex: 0 0 280px;
+                min-height: 260px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .pool-card-scroll {
+                flex: 0 0 250px;
+                min-height: 240px;
+            }
+        }
+
+        /* Sistema de Notificaciones Flotantes */
+        .notifications-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .notification {
+            background: white;
+            border: 2px solid #8B4513;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            min-width: 300px;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification.hide {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        .notification-icon {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .notification.success .notification-icon {
+            background: #28a745;
+        }
+
+        .notification.error .notification-icon {
+            background: #dc3545;
+        }
+
+        .notification.warning .notification-icon {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .notification.info .notification-icon {
+            background: #17a2b8;
+        }
+
+        .notification-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            margin: 0;
+        }
+
+        .notification-message {
+            font-size: 13px;
+            color: #666;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .notification-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #999;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .notification-close:hover {
+            color: #333;
+        }
+
+        .notification-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: #8B4513;
+            border-radius: 0 0 10px 10px;
+            transition: width linear;
+        }
+
+        @media (max-width: 480px) {
+            .notifications-container {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+            }
+
+            .notification {
+                min-width: auto;
+                max-width: none;
+            }
+        }
         
         .pool-header {
             display: flex;
@@ -811,29 +1015,6 @@
             font-weight: bold;
         }
         
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-        
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
         
         .grid {
             display: grid;
@@ -873,6 +1054,9 @@
     </style>
 </head>
 <body>
+    <!-- Sistema de Notificaciones Flotantes -->
+    <div id="notifications-container" class="notifications-container"></div>
+    
     <div class="container">
         <div class="header">
             <h1>🌾 Agro Coop del Sur</h1>
@@ -910,8 +1094,6 @@
             </div>
         </div>
 
-        <!-- Alertas -->
-        <div id="alerts"></div>
 
         <!-- Panel de Estado del Proceso -->
         <div id="process-status-panel" class="process-status-panel" style="display: none;">
@@ -959,7 +1141,11 @@
             <button class="btn btn-warning" onclick="devBootstrapPools(1, 120)" title="Bootstrap: reconstruir pools desde on-chain">
                 🔄 Bootstrap
             </button>
-            <div id="pools-list"></div>
+            <div class="pools-scroll-container" id="pools-scroll-container">
+              <div class="pools-scroll-wrapper" id="pools-scroll-wrapper">
+                <div class="pools-grid" id="pools-grid"></div>
+              </div>
+            </div>
         </div>
 
         <!-- Grid principal -->
@@ -1077,6 +1263,89 @@
         let isConnected = false;
         let isFreighterAvailable = false;
 
+        // --- Sistema de Notificaciones Flotantes ---
+        let notificationCounter = 0;
+
+        function showNotification(type, title, message, duration = 5000) {
+            const container = document.getElementById('notifications-container');
+            if (!container) return;
+
+            const id = `notification-${++notificationCounter}`;
+            const notification = document.createElement('div');
+            notification.id = id;
+            notification.className = `notification ${type}`;
+
+            const icons = {
+                success: '✓',
+                error: '✕',
+                warning: '⚠',
+                info: 'ℹ'
+            };
+
+            const titles = {
+                success: 'Éxito',
+                error: 'Error',
+                warning: 'Advertencia',
+                info: 'Información'
+            };
+
+            notification.innerHTML = `
+                <div class="notification-icon">${icons[type] || 'ℹ'}</div>
+                <div class="notification-content">
+                    <div class="notification-title">${titles[type] || 'Notificación'}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <button class="notification-close" onclick="hideNotification('${id}')">×</button>
+                <div class="notification-progress" style="width: 100%;"></div>
+            `;
+
+            container.appendChild(notification);
+
+            // Trigger animation
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+
+            // Auto-hide after duration
+            if (duration > 0) {
+                const progressBar = notification.querySelector('.notification-progress');
+                if (progressBar) {
+                    progressBar.style.transition = `width ${duration}ms linear`;
+                    progressBar.style.width = '0%';
+                }
+
+                setTimeout(() => {
+                    hideNotification(id);
+                }, duration);
+            }
+
+            return id;
+        }
+
+        function hideNotification(id) {
+            const notification = document.getElementById(id);
+            if (!notification) return;
+
+            notification.classList.remove('show');
+            notification.classList.add('hide');
+
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 400);
+        }
+
+        function hideAllNotifications() {
+            const container = document.getElementById('notifications-container');
+            if (!container) return;
+
+            const notifications = container.querySelectorAll('.notification');
+            notifications.forEach(notification => {
+                hideNotification(notification.id);
+            });
+        }
+
         // Función para convertir XLM a CLP
         function xlmToClp(xlmAmount) {
             return Math.round(xlmAmount * CONFIG.xlmToClpRate);
@@ -1121,12 +1390,12 @@ const poolDeadlineTimers = new Map();
 // Poller de seguridad para refrescar pools activos cada 2 minutos
 setInterval(async () => {
     try {
-        console.log('🔄 Poller de seguridad: verificando pools activos...');
+        // Poller de seguridad
         for (const pool of activePoolsCache.values()) {
             await getPoolInfo(Number(pool.id));
         }
     } catch (e) {
-        console.warn('Poller de pools activos falló:', e);
+        // Poller falló
     }
 }, 120000); // 2 minutos
 
@@ -1267,17 +1536,17 @@ function scheduleDeadlineWatcher(poolId, deadlineSec) {
 
         const handle = waitLong(delay, async () => {
             try {
-                console.log(`🕐 Deadline alcanzado para pool #${poolId}, refrescando estado...`);
+                // Deadline alcanzado
                 await getPoolInfo(poolId);
             } catch (e) {
-                console.warn(`Error al refrescar pool #${poolId} tras deadline:`, e);
+                // Error al refrescar pool
             }
         });
 
         poolDeadlineTimers.set(poolId, handle);
-        console.log(`⏰ Programado refresco para pool #${poolId} en ${Math.round(delay/1000)}s`);
+        // Programado refresco para pool
     } catch (e) {
-        console.warn('No se pudo programar watcher de deadline:', e);
+        // No se pudo programar watcher
     }
 }
 
@@ -1287,16 +1556,16 @@ function clearDeadlineWatcher(poolId) {
     if (t) {
         clearTimeout(t);
         poolDeadlineTimers.delete(poolId);
-        console.log(`⏰ Timer limpiado para pool #${poolId}`);
+        // Timer limpiado
     }
 }
 
 // Limpia todos los timers de deadline (útil al desconectar)
 function clearAllDeadlineTimers() {
-    console.log('🧹 Limpiando todos los watchers de deadline...');
+    // Limpiando watchers
     for (const [poolId, timer] of poolDeadlineTimers.entries()) {
         clearTimeout(timer);
-        console.log(`⏰ Timer limpiado para pool #${poolId}`);
+        // Timer limpiado
     }
     poolDeadlineTimers.clear();
 }
@@ -1587,7 +1856,7 @@ function clearAllDeadlineTimers() {
 
         // Inicializar aplicación
         async function init() {
-            console.log('🚀 Inicializando dApp...');
+            // Inicializando dApp
             server = new StellarSdk.SorobanRpc.Server(CONFIG.rpcUrl);
             
             // Cargar hash de transacción desde localStorage
@@ -1616,7 +1885,7 @@ function clearAllDeadlineTimers() {
             }
 
             // 🔸 Auto-sana el backend desde el snapshot local
-            try { await selfHealBackendFromSnapshot(); } catch(e) { console.warn('No se pudo auto-sanar el backend:', e); }
+            try { await selfHealBackendFromSnapshot(); } catch(e) { /* No se pudo auto-sanar el backend */ }
             
             // Esperar a que se carguen los scripts y verificar disponibilidad
             let retries = 0;
@@ -1624,7 +1893,7 @@ function clearAllDeadlineTimers() {
             
             while (retries < maxRetries) {
                 if (typeof StellarSdk !== 'undefined') {
-                    console.log('✅ Stellar SDK cargado');
+                    // Stellar SDK cargado
                     break;
                 }
                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -1644,26 +1913,26 @@ function clearAllDeadlineTimers() {
             await checkFreighterAvailability();
             
             // 🔸 Cargar automáticamente las pools públicas al abrir la dApp (después de detectar Freighter)
-            try { await loadActivePools(); } catch(e) { console.warn('No se pudieron cargar pools al iniciar:', e); }
+            try { await loadActivePools(); } catch(e) { /* No se pudieron cargar pools al iniciar */ }
         }
 
         // Verificar disponibilidad de Freighter usando la API oficial importada
         async function checkFreighterAvailability() {
-            console.log('🔍 Verificando Freighter usando API oficial importada...');
+            // Verificando Freighter
             
             // Esperar a que el módulo ES6 se cargue
             const waitForFreighterAPI = () => {
                 return new Promise((resolve) => {
                     // Si ya está disponible
                     if (window.freighterApi) {
-                        console.log('✅ Freighter API ya disponible');
+                        // Log removed
                         resolve(true);
                         return;
                     }
                     
                     // Escuchar evento de carga del módulo
                     const handleFreighterReady = () => {
-                        console.log('✅ Freighter API cargado desde módulo ES6');
+                        // Log removed
                         window.removeEventListener('freighter-ready', handleFreighterReady);
                         resolve(true);
                     };
@@ -1673,7 +1942,7 @@ function clearAllDeadlineTimers() {
                     // Timeout después de 5 segundos
                     setTimeout(() => {
                         window.removeEventListener('freighter-ready', handleFreighterReady);
-                        console.log('❌ Timeout esperando Freighter API');
+                        // Log removed
                         resolve(false);
                     }, 5000);
                 });
@@ -1682,7 +1951,7 @@ function clearAllDeadlineTimers() {
             const apiLoaded = await waitForFreighterAPI();
             
             if (apiLoaded && window.freighterApi) {
-                console.log('✅ Freighter API detectado correctamente');
+                // Log removed
                 
                 // Normalizar API
                 window.freighter = window.freighterApi;
@@ -1692,12 +1961,12 @@ function clearAllDeadlineTimers() {
             }
             
             // Si no se cargó la API, mostrar error específico
-            console.log('❌ Freighter API no se pudo cargar');
-            console.log('💡 Posibles causas:');
+            // Log removed
+            // Log removed
             console.log('   - Problema de red (CDN no disponible)');
-            console.log('   - Navegador no soporta ES6 modules');
-            console.log('   - Bloqueador de contenido bloqueando el CDN');
-            console.log('   - Extensión Freighter no instalada');
+            // Log removed
+            // Log removed
+            // Log removed
             
             handleFreighterNotFound();
         }
@@ -1706,7 +1975,7 @@ function clearAllDeadlineTimers() {
         async function handleFreighterDetected() {
             try {
                 isFreighterAvailable = true;
-                console.log('🎉 Freighter confirmado como disponible');
+                // Log removed
                 
                 // Verificar métodos disponibles
                 
@@ -1715,7 +1984,7 @@ function clearAllDeadlineTimers() {
                 try {
                     isConnectedResult = await window.freighter.isConnected();
                 } catch (e) {
-                    console.log('⚠️ No se pudo verificar estado de conexión:', e.message);
+                    // Log removed
                 }
                 
                 if (isConnectedResult) {
@@ -1746,18 +2015,18 @@ function clearAllDeadlineTimers() {
                                 }
                             }
                         } catch (e) {
-                            console.log('⚠️ Error obteniendo dirección:', e.message);
+                            // Log removed
                             showAlert('💡 Freighter detectado. Haz clic en "Conectar" para continuar.', 'info');
                         }
                     } catch (pkError) {
-                        console.log('⚠️ No hay clave pública disponible, requiere conexión manual:', pkError.message);
+                        // Log removed
                         showAlert('💡 Freighter detectado. Haz clic en "Conectar" para continuar.', 'info');
                     }
                 } else {
                     showAlert('💡 Freighter detectado. Haz clic en "Conectar" para continuar.', 'info');
                 }
             } catch (error) {
-                console.error('Error manejando Freighter detectado:', error);
+                // Log removed
                 showAlert('⚠️ Freighter detectado pero con errores: ' + error.message, 'danger');
                 // Aún así, marcar como disponible para permitir intentos de conexión
                 isFreighterAvailable = true;
@@ -1830,7 +2099,7 @@ function clearAllDeadlineTimers() {
                 statusIndicator().className = 'status-indicator status-loading';
                 connectBtn().disabled = true;
 
-                console.log('🔄 Conectando con Freighter usando API oficial...');
+                // Log removed
                 
                 // Usar requestAccess() según la documentación oficial
                 // requestAccess() -> Promise<{ address: string } & { error?: string }>
@@ -1852,8 +2121,8 @@ function clearAllDeadlineTimers() {
                 userAddress = accessResult.address;
                 isConnected = true;
                 
-                console.log('✅ Wallet conectada exitosamente');
-                console.log('📍 Dirección:', userAddress);
+                // Log removed
+                // Log removed
                 
                 // Actualizar información de red
                 await updateNetworkInfo();
@@ -1862,7 +2131,7 @@ function clearAllDeadlineTimers() {
                 showAlert('✅ Wallet conectada exitosamente', 'success');
                 
             } catch (error) {
-                console.error('❌ Error conectando wallet:', error);
+                // Log removed
                 showAlert('❌ Error al conectar: ' + error.message, 'danger');
                 isConnected = false;
                 userAddress = null;
@@ -1874,7 +2143,7 @@ function clearAllDeadlineTimers() {
 
         // Desconectar wallet
         function disconnectWallet() {
-            console.log('🚪 Desconectando wallet...');
+            // Log removed
             isConnected = false;
             userAddress = null;
             showAlert('ℹ️ Wallet desconectada', 'info');
@@ -1896,7 +2165,7 @@ function clearAllDeadlineTimers() {
             if (!isConnected || !userAddress) return;
 
             try {
-                console.log('🌐 Obteniendo información de red...');
+                // Log removed
                 const nd = await window.freighter.getNetworkDetails();
                 console.log('🌐 getNetworkDetails() resultado:', nd);
                 if (nd.error) throw new Error(nd.error);
@@ -1909,11 +2178,11 @@ function clearAllDeadlineTimers() {
                 if (networkNameEl)  networkNameEl.textContent  = networkName;
                 if (networkBadgeEl) networkBadgeEl.textContent = networkName;
 
-                console.log('📝 Passphrase:', nd.networkPassphrase);
-                console.log('🔗 Soroban RPC:', nd.sorobanRpcUrl);
-                console.log('✅ Información de red actualizada correctamente');
+                // Log removed
+                // Log removed
+                // Log removed
             } catch (err) {
-                console.error('❌ Error obteniendo información de red:', err);
+                // Log removed
 
                 // Valores por defecto, pero solo si existen
                 const networkNameEl  = document.getElementById('network-name');
@@ -1931,7 +2200,7 @@ function clearAllDeadlineTimers() {
             }
 
             try {
-                console.log('🌐 Obteniendo información detallada de la red...');
+                // Log removed
                 
                 // Usar getNetworkDetails() según la documentación oficial
                 const networkDetails = await window.freighter.getNetworkDetails();
@@ -1948,11 +2217,11 @@ function clearAllDeadlineTimers() {
                     ${networkDetails.sorobanRpcUrl ? 'Soroban RPC: ' + networkDetails.sorobanRpcUrl : ''}
                 `;
                 
-                console.log('✅ Información de red obtenida:', info);
+                // Log removed
                 showAlert('📡 Información de red:\n' + info, 'info');
                 
             } catch (error) {
-                console.error('❌ Error obteniendo información de red:', error);
+                // Log removed
                 
                 // Usar valores por defecto en caso de error
                 let info = `Red: Testnet (por defecto)\n`;
@@ -1970,10 +2239,10 @@ function clearAllDeadlineTimers() {
             }
 
             try {
-                console.log('✍️ Iniciando prueba de firma...');
+                // Log removed
                 
                 const message = 'Compra Colectiva - Mensaje de prueba desde la dApp';
-                console.log('📝 Mensaje a firmar:', message);
+                // Log removed
                 
                 // Usar signMessage() según la documentación oficial
                 // signMessage(message: string, opts: { address: string }) -> Promise<{ signedMessage: string | null; signerAddress: string; } & { error?: string; }>
@@ -1991,14 +2260,14 @@ function clearAllDeadlineTimers() {
                     throw new Error('No se recibió un mensaje firmado');
                 }
 
-                console.log('✅ Mensaje firmado exitosamente');
-                console.log('🔐 Mensaje firmado:', signResult.signedMessage);
-                console.log('👤 Firmado por:', signResult.signerAddress);
+                // Log removed
+                // Log removed
+                // Log removed
                 
                 showAlert('✅ Mensaje firmado correctamente', 'success');
                 
             } catch (error) {
-                console.error('❌ Error firmando mensaje:', error);
+                // Log removed
                 showAlert('❌ Error firmando: ' + error.message, 'danger');
             }
         }
@@ -2028,14 +2297,14 @@ function clearAllDeadlineTimers() {
                 }
                 
             } catch (error) {
-                console.error('Error copiando dirección:', error);
+                // Log removed
                 showAlert('❌ Error al copiar la dirección', 'danger');
             }
         }
 
         // Actualizar interfaz de usuario
         function updateUI() {
-            console.log('🔄 Actualizando UI - isConnected:', isConnected, 'userAddress:', userAddress, 'isFreighterAvailable:', isFreighterAvailable);
+            // Log removed
             
             const indicator = statusIndicator();
             const connectButton = connectBtn();
@@ -2161,7 +2430,7 @@ function clearAllDeadlineTimers() {
                     })
                 });
             } catch (error) {
-                console.warn('No se pudo enviar log al servidor:', error);
+                // Log removed
             }
         }
 
@@ -2181,7 +2450,7 @@ function clearAllDeadlineTimers() {
                     })
                 });
             } catch (err) {
-                console.warn('No se pudo enviar log de transacción:', err);
+                // Log removed
             }
         }
 
@@ -2200,24 +2469,21 @@ function clearAllDeadlineTimers() {
                     })
                 });
             } catch (err) {
-                console.warn('No se pudo enviar log de error:', err);
+                // Log removed
             }
         }
 
-        // Mostrar alertas
+        // Función de compatibilidad para showAlert (ahora usa notificaciones)
         function showAlert(message, type = 'info') {
-            const alertsDiv = document.getElementById('alerts');
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.style.whiteSpace = 'pre-line'; // Para mostrar saltos de línea
-            alertDiv.textContent = message;
-            alertsDiv.appendChild(alertDiv);
+            const typeMap = {
+                'success': 'success',
+                'danger': 'error',
+                'warning': 'warning',
+                'info': 'info'
+            };
             
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.parentNode.removeChild(alertDiv);
-                }
-            }, 8000);
+            const notificationType = typeMap[type] || 'info';
+            showNotification(notificationType, '', message, 5000);
         }
 
         // === FUNCIONES DE POOL (STUBS) ===
@@ -2226,7 +2492,7 @@ function clearAllDeadlineTimers() {
         // Verificar conectividad con el contrato
         async function verifyContractConnection() {
             try {
-                console.log('🔍 Verificando conectividad con el contrato...');
+                // Log removed
                 const account = await server.getAccount(userAddress);
                 
                 // Intentar una consulta simple al contrato usando get_pool
@@ -2246,10 +2512,10 @@ function clearAllDeadlineTimers() {
 
                 // Solo simular la transacción, no enviarla
                 const simulation = await server.simulateTransaction(testTransaction);
-                console.log('✅ Contrato accesible:', simulation);
+                // Log removed
                 return simulation; // Return the full simulation result
             } catch (error) {
-                console.warn('⚠️ No se pudo verificar el contrato:', error.message);
+                // Log removed
                 return { error: error.message }; // Return error object
             }
         }
@@ -2257,7 +2523,7 @@ function clearAllDeadlineTimers() {
         // Verificar si el contrato está inicializado
         async function isContractInitialized() {
             try {
-                console.log('🔍 Verificando si el contrato está inicializado...');
+                // Log removed
                 const account = await server.getAccount(userAddress);
                 
                 // Intentar simular una operación que requiere inicialización
@@ -2285,18 +2551,18 @@ function clearAllDeadlineTimers() {
                 }
                 
                 // Si no hay error MissingValue, asumimos que está inicializado
-                console.log('✅ Contrato inicializado correctamente');
+                // Log removed
                 return true;
                 
             } catch (error) {
-                console.warn('⚠️ Error verificando inicialización:', error.message);
+                // Log removed
                 return false;
             }
         }
 
         async function initializeContract() {
             try {
-                console.log('🔧 Inicializando contrato...');
+                // Log removed
                 showAlert('🔧 Inicializando contrato...', 'info');
                 
                 const account = await server.getAccount(userAddress);
@@ -2327,12 +2593,12 @@ function clearAllDeadlineTimers() {
                     throw new Error('initialize falló: ' + res.status);
                 }
                 
-                console.log('✅ Contrato inicializado exitosamente');
+                // Log removed
                 showAlert('✅ Contrato inicializado exitosamente', 'success');
                 return true;
                 
             } catch (error) {
-                console.error('❌ Error inicializando contrato:', error);
+                // Log removed
                 showAlert('❌ Error inicializando contrato: ' + error.message, 'danger');
                 return false;
             }
@@ -2426,9 +2692,9 @@ function clearAllDeadlineTimers() {
                     return;
                 }
 
-                console.log('🏗️ Creando pool...');
-                console.log('📍 Proveedor:', supplierAddress);
-                console.log('🎯 Meta:', goalXlm, 'XLM');
+                // Log removed
+                // Log removed
+                // Log removed
                 console.log('⏰ Deadline:', new Date(deadline * 1000).toLocaleString());
 
                 // Mostrar panel de proceso
@@ -2450,7 +2716,7 @@ function clearAllDeadlineTimers() {
                 try {
                     account = await server.getAccount(userAddress);
                 } catch (accountError) {
-                    console.error('❌ Error obteniendo cuenta:', accountError);
+                    // Log removed
                     throw new Error('No se pudo obtener información de la cuenta. Verifica que la wallet tenga fondos suficientes.');
                 }
                 
@@ -2468,22 +2734,22 @@ function clearAllDeadlineTimers() {
                 const tokenScVal = StellarSdk.nativeToScVal(tokenAddress, { type: 'address' });
                 const supplierScVal = StellarSdk.nativeToScVal(supplierAddressObj, { type: 'address' });
                 
-                console.log('📝 Argumentos preparados:');
-                console.log('  - Creator:', userAddress);
-                console.log('  - Token:', CONFIG.tokenId);
-                console.log('  - Supplier:', supplierAddress);
-                console.log('  - Goal:', goalXlm, 'XLM');
+                // Log removed
+                // Log removed
+                // Log removed
+                // Log removed
+                // Log removed
                 console.log('  - Deadline:', new Date(deadline * 1000).toLocaleString());
                 
                 // Debug: Verificar tipos de argumentos
-                console.log('🔍 Verificando tipos de argumentos:');
-                console.log('  - creatorScVal:', creatorScVal);
-                console.log('  - tokenScVal:', tokenScVal);
-                console.log('  - supplierScVal:', supplierScVal);
-                console.log('  - goalScVal:', goalScVal);
-                console.log('  - deadlineScVal:', deadlineScVal);
+                // Log removed
+                // Log removed
+                // Log removed
+                // Log removed
+                // Log removed
+                // Log removed
                 
-                console.log('🔨 Construyendo transacción...');
+                // Log removed
                 
                 // 1) Construir operación
                 const operation = StellarSdk.Operation.invokeContractFunction({
@@ -2507,22 +2773,22 @@ function clearAllDeadlineTimers() {
                 .setTimeout(600) // 10 minutos para dar tiempo a Freighter
                 .build();
 
-                console.log('✅ Transacción construida exitosamente');
+                // Log removed
 
                 // 3) Simular y preparar (footprint + resource fee + auth)
-                console.log('🔍 Simulando transacción...');
+                // Log removed
                 const simulation = await server.simulateTransaction(transaction);
-                console.log('📊 Simulación:', simulation);
+                // Log removed
                 
                 if (simulation.error) {
                     throw new Error('Error en simulación: ' + simulation.error);
                 }
 
-                console.log('🔧 Preparando transacción...');
+                // Log removed
                 transaction = await server.prepareTransaction(transaction);
-                console.log('✅ Transacción preparada con footprint y autorización');
+                // Log removed
 
-                console.log('✍️ Firmando transacción...');
+                // Log removed
                 
                 // Actualizar estado visual
                 setProcessStep(2);
@@ -2536,7 +2802,7 @@ function clearAllDeadlineTimers() {
                 });
 
                 if (signedTransaction.error) {
-                    console.error('❌ Error de Freighter:', signedTransaction.error);
+                    // Log removed
                     await sendErrorLog(signedTransaction.error, 'Error firmando transacción', null);
                     
                     let errorMessage = 'Error firmando transacción';
@@ -2551,7 +2817,7 @@ function clearAllDeadlineTimers() {
                     throw new Error(errorMessage);
                 }
 
-                console.log('📤 Enviando transacción...');
+                // Log removed
                 
                 // Actualizar estado visual
                 setProcessStep(3);
@@ -2569,8 +2835,8 @@ function clearAllDeadlineTimers() {
                 );
 
                 const response = await server.sendTransaction(transactionToSubmit);
-                console.log('📊 Respuesta completa:', response);
-                console.log('📊 Status:', response.status);
+                // Log removed
+                // Log removed
 
                 if (response.status === 'SUCCESS') {
                     // Actualizar estado visual
@@ -2699,13 +2965,13 @@ function clearAllDeadlineTimers() {
                         } else {
                             updateProcessStatus('Transacción falló', false);
                             showAlert('❌ La transacción falló', 'danger');
-                            console.error('Detalles del error:', final);
+                            // Log removed
                             setTimeout(() => hideProcessPanel(), 3000);
                         }
                     } catch (e) {
                         updateProcessStatus('Expiró la espera', false);
                         showAlert('⌛ Expiró la espera de confirmación', 'warning');
-                        console.error('Error en watcher:', e);
+                        // Log removed
                         setTimeout(() => hideProcessPanel(), 3000);
                     }
                 } else {
@@ -2724,7 +2990,7 @@ function clearAllDeadlineTimers() {
                         // Analizar tipo de error específico
                         if (response.errorResult.result && response.errorResult.result._switch) {
                             const errorType = response.errorResult.result._switch.name;
-                            console.log('🔍 Tipo de error:', errorType);
+                            // Log removed
                             
                             if (errorType === 'txMalformed') {
                                 errorMessage += '\n💡 Error: Transacción malformada. Verifica los argumentos del contrato.';
@@ -2737,7 +3003,7 @@ function clearAllDeadlineTimers() {
                 }
 
             } catch (error) {
-                console.error('❌ Error creando pool:', error.message);
+                // Log removed
                 await sendErrorLog(error, 'Error en createPool', error.stack);
                 
                 // Ocultar panel de proceso en caso de error
@@ -2807,7 +3073,7 @@ function clearAllDeadlineTimers() {
                     const id = String(p.id);
                     const r = await fetch(`/api/pools/${id}`);
                     if (r.status === 404) {
-                        console.log(`Backend no conoce pool #${id}; registrando...`);
+                        // Log removed
                         const plain = normalizePoolForBackend(p);
                         await fetch('/api/pools/register', {
                             method: 'POST',
@@ -2817,7 +3083,7 @@ function clearAllDeadlineTimers() {
                     }
                 }
             } catch (e) {
-                console.warn('selfHealBackendFromSnapshot falló:', e);
+                // Log removed
             }
         }
 
@@ -2845,13 +3111,13 @@ function clearAllDeadlineTimers() {
                 }
 
                 // Validar que la pool existe y está activa
-                console.log('🔍 Validando pool #' + poolId + ' antes de contribuir...');
+                // Log removed
                 let pool;
                 try {
                     // Validación en backend
                     let res = await fetch(`/api/pools/${poolId}`);
                     if (res.status === 404) {
-                        console.warn(`Pool #${poolId} no está en el backend; registrando...`);
+                        // Log removed
                         try {
                             await ensureServerHasPool(poolId);      // <- nuevo
                             res = await fetch(`/api/pools/${poolId}`); // reintenta
@@ -2879,9 +3145,9 @@ function clearAllDeadlineTimers() {
                         throw new Error(`Pool #${poolId} ha expirado`);
                     }
                     
-                    console.log('✅ Pool #' + poolId + ' validada:', pool);
+                    // Log removed
                 } catch (e) {
-                    console.error('❌ Error validando pool:', e);
+                    // Log removed
                     showAlert('❌ Error validando cooperativa: ' + e.message, 'danger');
                     return;
                 }
@@ -2902,9 +3168,9 @@ function clearAllDeadlineTimers() {
                 // Convertir XLM a stroops (7 decimales para XLM)
                 const amountStroops = BigInt(Math.round(amountXlm * 1e7));
 
-                console.log('💰 Contribuyendo al pool...');
-                console.log('🆔 Pool ID:', poolId);
-                console.log('💵 Cantidad:', amountXlm, 'XLM');
+                // Log removed
+                // Log removed
+                // Log removed
 
                 // Mostrar panel de proceso
                 showProcessPanel();
@@ -2912,14 +3178,14 @@ function clearAllDeadlineTimers() {
                 updateProcessStatus('Verificando balance de XLM...');
 
                 // Asegurar que tenemos XLM suficiente en el token SAC
-                console.log('💰 Verificando balance de XLM en token...');
+                // Log removed
                 await ensureWrappedXlm(amountStroops, pool.token);
 
                 setProcessStep(2);
                 updateProcessStatus('Preparando aprobación...');
 
                 // Primero necesitamos aprobar el contrato para gastar nuestros XLM
-                console.log('🔐 Aprobando contrato para gastar XLM...');
+                // Log removed
                 
                 const account = await server.getAccount(userAddress);
                 
@@ -2941,10 +3207,10 @@ function clearAllDeadlineTimers() {
                 const expScVal = StellarSdk.nativeToScVal(expirationLedger, { type: 'u32' });
                 
                 console.log('🔍 Debug approve args (4 argumentos):');
-                console.log('  - fromScVal:', fromScVal);
-                console.log('  - spenderScVal:', spenderScVal);
-                console.log('  - amountScVal:', amountScVal);
-                console.log('  - expScVal:', expScVal);
+                // Log removed
+                // Log removed
+                // Log removed
+                // Log removed
                 
                 const approveOperation = StellarSdk.Operation.invokeContractFunction({
                     contract: pool.token, // Token específico de la pool
@@ -2964,7 +3230,7 @@ function clearAllDeadlineTimers() {
                 // 3) Simular y preparar
                 setProcessStep(3);
                 updateProcessStatus('Simulando aprobación...');
-                console.log('🔍 Simulando approve...');
+                // Log removed
                 const approveSimulation = await server.simulateTransaction(approveTransaction);
                 if (approveSimulation.error) {
                     throw new Error('Error en simulación de approve: ' + approveSimulation.error);
@@ -2972,7 +3238,7 @@ function clearAllDeadlineTimers() {
 
                 setProcessStep(4);
                 updateProcessStatus('Preparando aprobación...');
-                console.log('🔧 Preparando approve...');
+                // Log removed
                 approveTransaction = await server.prepareTransaction(approveTransaction);
 
                 // 4) Firmar y enviar approve
@@ -2996,16 +3262,16 @@ function clearAllDeadlineTimers() {
                 );
 
                 const approveResponse = await server.sendTransaction(approveToSubmit);
-                console.log('✅ Approve enviado:', approveResponse);
+                // Log removed
 
                 // Manejar PENDING usando waitForTx (como en createPool)
                 if (approveResponse.status === 'PENDING') {
-                    console.log('⏳ Approve pendiente, esperando confirmación...');
+                    // Log removed
                     const final = await waitForTx(approveResponse.hash);
                     if (final.status !== 'SUCCESS') {
                         throw new Error('Approve no se confirmó: ' + final.status);
                     }
-                    console.log('✅ Approve confirmado on-chain');
+                    // Log removed
                 } else if (approveResponse.status !== 'SUCCESS') {
                     throw new Error('Approve falló: ' + approveResponse.status);
                 }
@@ -3013,7 +3279,7 @@ function clearAllDeadlineTimers() {
                 // Ahora crear la transacción de contribute
                 setProcessStep(5);
                 updateProcessStatus('Preparando contribución...');
-                console.log('💸 Enviando contribución...');
+                // Log removed
                 
                 // 1) Construir operación de contribute
                 const userAddr = StellarSdk.Address.fromString(userAddress);
@@ -3038,13 +3304,13 @@ function clearAllDeadlineTimers() {
                 .build();
 
                 // 3) Simular y preparar
-                console.log('🔍 Simulando contribute...');
+                // Log removed
                 const contributeSimulation = await server.simulateTransaction(contributeTransaction);
                 if (contributeSimulation.error) {
                     throw new Error('Error en simulación de contribute: ' + contributeSimulation.error);
                 }
 
-                console.log('🔧 Preparando contribute...');
+                // Log removed
                 contributeTransaction = await server.prepareTransaction(contributeTransaction);
 
                 // 4) Firmar y enviar contribute
@@ -3068,7 +3334,7 @@ function clearAllDeadlineTimers() {
                 );
 
                 const contributeResponse = await server.sendTransaction(contributeToSubmit);
-                console.log('✅ Contribución enviada:', contributeResponse);
+                // Log removed
 
                 // Manejar PENDING usando waitForTx (como en createPool y approve)
                 if (contributeResponse.status === 'PENDING') {
@@ -3079,7 +3345,7 @@ function clearAllDeadlineTimers() {
                     if (final.status !== 'SUCCESS') {
                         throw new Error(`La contribución falló on-chain: ${final.status}`);
                     }
-                    console.log('✅ Contribución confirmada on-chain');
+                    // Log removed
                 } else if (contributeResponse.status !== 'SUCCESS') {
                     throw new Error(`La contribución no fue aceptada: ${contributeResponse.status}`);
                 }
@@ -3106,11 +3372,11 @@ function clearAllDeadlineTimers() {
                                 });
                             }
                         } catch (e) {
-                            console.warn('No se pudo refrescar el pool automáticamente:', e);
+                            // Log removed
                         }
                     }, 1200);
                 } catch (e) {
-                    console.warn('Error configurando refresco del pool:', e);
+                    // Log removed
                 }
                 
                 // Limpiar formulario y ocultar panel
@@ -3118,7 +3384,7 @@ function clearAllDeadlineTimers() {
                 setTimeout(() => hideProcessPanel(), 2000);
 
             } catch (error) {
-                console.error('❌ Error contribuyendo:', error);
+                // Log removed
                 showAlert('❌ Error contribuyendo: ' + error.message, 'danger');
                 setTimeout(() => hideProcessPanel(), 3000);
             }
@@ -3243,7 +3509,7 @@ function clearAllDeadlineTimers() {
                 setTimeout(() => hideProcessPanel(), 2000);
 
             } catch (error) {
-                console.error('❌ Error finalizando pool:', error);
+                // Log removed
                 showAlert('❌ Error finalizando pool: ' + error.message, 'danger');
                 setTimeout(() => hideProcessPanel(), 3000);
             }
@@ -3264,8 +3530,8 @@ function clearAllDeadlineTimers() {
                     return;
                 }
 
-                console.log('💰 Solicitando reembolso...');
-                console.log('🆔 Pool ID:', poolId);
+                // Log removed
+                // Log removed
 
                 // Mostrar panel de proceso
                 showProcessPanel();
@@ -3335,7 +3601,7 @@ function clearAllDeadlineTimers() {
                 updateProcessStatus('Enviando a la red…');
                 
                 const submit = await server.sendTransaction(transactionToSubmit);
-                console.log('✅ Reembolso enviado:', submit);
+                // Log removed
 
                 // 6) Manejar respuesta (PENDING o SUCCESS)
                 if (submit.status === 'PENDING') {
@@ -3373,7 +3639,7 @@ function clearAllDeadlineTimers() {
                 setTimeout(() => hideProcessPanel(), 2000);
 
             } catch (error) {
-                console.error('❌ Error solicitando reembolso:', error);
+                // Log removed
                 showAlert('❌ Error solicitando reembolso: ' + error.message, 'danger');
                 hideProcessPanel();
             }
@@ -3396,8 +3662,7 @@ function clearAllDeadlineTimers() {
                     }
                 }
 
-                console.log('🔍 Consultando pool (read-only)...');
-                console.log('🆔 Pool ID:', poolId);
+                // Consultando pool (read-only)
 
                 const account = await server.getAccount(userAddress);
                 
@@ -3420,7 +3685,7 @@ function clearAllDeadlineTimers() {
                 .build();
 
                 // 3) Solo simular (read-only)
-                console.log('🔍 Simulando consulta de pool...');
+                // Simulando consulta de pool
                 const simulation = await server.simulateTransaction(transaction);
                 if (simulation.error) {
                     throw new Error('Error en simulación: ' + simulation.error);
@@ -3433,7 +3698,7 @@ function clearAllDeadlineTimers() {
                 }
 
                 const pool = StellarSdk.scValToNative(scv);
-                console.log('📊 Datos del pool (decodificado):', pool);
+                // Datos del pool decodificados
 
                 // Calcular estado del pool
                 const now = Math.floor(Date.now() / 1000);
@@ -3473,7 +3738,7 @@ function clearAllDeadlineTimers() {
                 return { pool, status };
 
             } catch (error) {
-                console.error('❌ Error consultando pool:', error);
+                // Error consultando pool
                 showAlert('❌ Error consultando pool: ' + error.message, 'danger');
                 return null;
             }
@@ -3481,15 +3746,15 @@ function clearAllDeadlineTimers() {
 
         // Renderizar tarjeta del pool en la UI
         function renderPoolCard(poolId, pool, status) {
-            const poolsList = document.getElementById('pools-list');
+            const grid = document.getElementById('pools-grid');
             
             // Crear o actualizar tarjeta del pool
             let poolCard = document.getElementById(`pool-${poolId}`);
             if (!poolCard) {
                 poolCard = document.createElement('div');
                 poolCard.id = `pool-${poolId}`;
-                poolCard.className = 'pool-card';
-                poolsList.appendChild(poolCard);
+                poolCard.className = 'pool-card-scroll';
+                grid.appendChild(poolCard);
             }
 
             // Calcular progreso
@@ -3628,16 +3893,15 @@ function clearAllDeadlineTimers() {
 
         // Función helper para renderizar lista de pools (usada en fallbacks)
         function renderPoolsList(pools) {
-            const container = document.getElementById('pools-list');
-            if (!container) return;
-            
-            container.innerHTML = '';
-            for (const pool of pools) {
-                renderPoolCard(Number(pool.id), pool, pool.status);
-                rememberActivePool(pool);
-                scheduleDeadlineWatcher(pool.id, pool.deadline);
-            }
-            refreshContribDropdownFromCache();
+          const grid = document.getElementById('pools-grid');
+          if (!grid) return;
+          grid.innerHTML = '';
+          for (const pool of pools) {
+            renderPoolCard(Number(pool.id), pool, pool.status);
+            rememberActivePool(pool);
+            scheduleDeadlineWatcher(pool.id, pool.deadline);
+          }
+          refreshContribDropdownFromCache();
         }
 
         // Función de bootstrap para reconstruir pools desde on-chain
@@ -3734,7 +3998,7 @@ function clearAllDeadlineTimers() {
 
                 showAlert(`✅ ${pools.length} cooperativa(s) cargadas`, 'success');
             } catch (e) {
-                console.error('❌ Error cargando pools públicas:', e);
+                // Log removed
                 showAlert('❌ No se pudieron cargar las cooperativas públicas', 'danger');
             }
         }
@@ -3745,11 +4009,11 @@ function clearAllDeadlineTimers() {
             if (!hash) return;
 
             try {
-                console.log('🔍 Verificando estado de transacción...');
-                console.log('📋 Hash:', hash);
+                // Log removed
+                // Log removed
 
                 const response = await server.getTransaction(hash);
-                console.log('📊 Estado de transacción:', response);
+                // Log removed
 
                 if (response.status === 'SUCCESS') {
                     showAlert(`✅ Transacción exitosa!\nHash: ${hash}\nLedger: ${response.ledger}`, 'success');
@@ -3762,7 +4026,7 @@ function clearAllDeadlineTimers() {
                 }
 
             } catch (error) {
-                console.error('❌ Error verificando transacción:', error);
+                // Log removed
                 showAlert('❌ Error verificando transacción: ' + error.message, 'danger');
             }
         }
@@ -3774,7 +4038,7 @@ function clearAllDeadlineTimers() {
         function storeLastTransaction(hash) {
             lastTransactionHash = hash;
             localStorage.setItem('lastTxHash', hash);
-            console.log('💾 Hash almacenado:', hash);
+            // Log removed
         }
 
         // Cargar hash desde localStorage al inicializar
@@ -3782,7 +4046,7 @@ function clearAllDeadlineTimers() {
             const stored = localStorage.getItem('lastTxHash');
             if (stored) {
                 lastTransactionHash = stored;
-                console.log('📂 Hash cargado desde localStorage:', stored);
+                // Hash cargado desde localStorage
             }
         }
 
@@ -3866,7 +4130,7 @@ function clearAllDeadlineTimers() {
             try { 
                 return await server.getTransaction(hash); 
             } catch (e) { 
-                console.warn('getTransaction SDK falló, usando RPC crudo:', e?.message || e);
+                // Log removed
                 return await rawGetTransactionStatus(CONFIG.sorobanRpcUrl, hash);
             }
         }
@@ -3880,7 +4144,7 @@ function clearAllDeadlineTimers() {
                 if (typeof scvLike === 'object' && typeof scvLike.xdr === 'string')
                     return StellarSdk.xdr.ScVal.fromXDR(scvLike.xdr, 'base64');
             } catch (e) {
-                console.warn('toScVal: no se pudo convertir', e);
+                // Log removed
             }
             return null;
         }
@@ -3888,7 +4152,7 @@ function clearAllDeadlineTimers() {
         // Poll de estado de transacción (Soroban RPC) - Versión robusta con fallback
         async function waitForTx(hash, { intervalMs = 2500, maxMs = 180000 } = {}) {
             const start = Date.now();
-            console.log(`🔄 Iniciando watcher para hash: ${hash}`);
+            // Log removed
             
             while (true) {
                 try {
@@ -3902,11 +4166,11 @@ function clearAllDeadlineTimers() {
                         res = await rawGetTransactionStatus(CONFIG.sorobanRpcUrl, hash);
                     }
 
-                    console.log(`📊 Estado actual: ${res.status}`);
+                    // Log removed
 
                     // NOT_FOUND | PENDING | SUCCESS | FAILED
                     if (res.status === 'SUCCESS' || res.status === 'FAILED') {
-                        console.log(`✅ Watcher completado: ${res.status}`);
+                        // Log removed
                         return res;
                     }
 
@@ -3915,7 +4179,7 @@ function clearAllDeadlineTimers() {
                     }
                     await new Promise(r => setTimeout(r, intervalMs));
                 } catch (error) {
-                    console.error('❌ Error en watcher:', error);
+                    // Log removed
                     if (Date.now() - start > maxMs) throw error;
                     await new Promise(r => setTimeout(r, intervalMs));
                 }
@@ -3929,12 +4193,12 @@ function clearAllDeadlineTimers() {
             }
 
             try {
-                console.log('🔍 Verificando última transacción...');
-                console.log('📋 Hash:', lastTransactionHash);
+                // Log removed
+                // Log removed
 
                 const response = await safeGetTransaction(lastTransactionHash);
 
-                console.log('📊 Estado de transacción:', response);
+                // Log removed
 
                 if (response.status === 'SUCCESS') {
                     showAlert(`✅ ¡Transacción exitosa!\nHash: ${lastTransactionHash}\nLedger: ${response.ledger}`, 'success');
@@ -3947,7 +4211,7 @@ function clearAllDeadlineTimers() {
                 }
 
             } catch (error) {
-                console.error('❌ Error verificando transacción:', error);
+                // Log removed
                 showAlert('❌ Error verificando transacción: ' + error.message, 'danger');
             }
         }
