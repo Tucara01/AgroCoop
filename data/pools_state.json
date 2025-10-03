@@ -664,6 +664,50 @@
       "raised": "3000000000",
       "deadline": 1762057440,
       "finalized": false
+    },
+    {
+      "id": 65,
+      "name": "leña para la familia",
+      "creator": "GDSAGECLO2COE3Y7F3SVX5TEWRBSYV4ZQGMUGAECOJSLVFPP2ILJS5FA",
+      "supplier": "GDP3KC3C7TIY3JV4PIYLLWTSI2CWTDP5GIZK65SEX3V56XXA5GSYJR2M",
+      "token": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      "goal": "30000000000",
+      "raised": "6000000000",
+      "deadline": 1762098360,
+      "finalized": false
+    },
+    {
+      "id": 66,
+      "name": "Comprar semillas de trigo",
+      "creator": "GDSAGECLO2COE3Y7F3SVX5TEWRBSYV4ZQGMUGAECOJSLVFPP2ILJS5FA",
+      "supplier": "GDP3KC3C7TIY3JV4PIYLLWTSI2CWTDP5GIZK65SEX3V56XXA5GSYJR2M",
+      "token": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      "goal": "2000000000",
+      "raised": "0",
+      "deadline": 1762110660,
+      "finalized": false
+    },
+    {
+      "id": 67,
+      "name": "Compra de semillas",
+      "creator": "GDSAGECLO2COE3Y7F3SVX5TEWRBSYV4ZQGMUGAECOJSLVFPP2ILJS5FA",
+      "supplier": "GDP3KC3C7TIY3JV4PIYLLWTSI2CWTDP5GIZK65SEX3V56XXA5GSYJR2M",
+      "token": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      "goal": "3000000000",
+      "raised": "0",
+      "deadline": 1762110960,
+      "finalized": false
+    },
+    {
+      "id": 68,
+      "name": "3 metros de leña",
+      "creator": "GDSAGECLO2COE3Y7F3SVX5TEWRBSYV4ZQGMUGAECOJSLVFPP2ILJS5FA",
+      "supplier": "GDP3KC3C7TIY3JV4PIYLLWTSI2CWTDP5GIZK65SEX3V56XXA5GSYJR2M",
+      "token": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      "goal": "6000000000",
+      "raised": "2500000000",
+      "deadline": 1759519440,
+      "finalized": false
     }
   ],
   "hidden": [
@@ -723,7 +767,13 @@
     "55",
     "56",
     "57",
-    "58"
+    "58",
+    "61",
+    "62",
+    "63",
+    "64",
+    "65",
+    "66"
   ],
-  "savedAt": "2025-10-03T15:47:05.932Z"
+  "savedAt": "2025-10-03T19:25:38.676Z"
 }

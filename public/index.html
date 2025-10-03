@@ -1078,14 +1078,14 @@
                         type="text"
                         id="pool-name"
                         placeholder="Ej: Leña de invierno para la sede"
-                        maxlength="40"
+                        maxlength="20"
                     />
-                    <small style="color:#666;font-size:0.9em;">Máx 40 caracteres</small>
+                    <small style="color:#666;font-size:0.9em;">Máx 20 caracteres</small>
                 </div>
                 <div class="form-group">
                     <label>Proveedor de Insumos:</label>
-                    <input type="text" id="supplier" placeholder="GABC... o nombre del proveedor" />
-                    <small style="color: #666; font-size: 0.9em;">Dirección Stellar o alias verificado</small>
+                    <input type="text" id="supplier" placeholder="GABC... dirección Stellar" />
+                    <small style="color: #666; font-size: 0.9em;">Solo direcciones Stellar</small>
                 </div>
                 <div class="form-group">
                     <label>Meta de Recaudación (XLM):</label>
@@ -1140,9 +1140,6 @@
                 <button class="btn btn-danger" onclick="requestRefund()" id="refund-btn" disabled>
                     💰 Obtener Reembolso
                 </button>
-                <button class="btn btn-warning" onclick="confirmDeleteAllPools()" id="delete-all-btn">
-                    🗑️ Eliminar Todas las Pools
-                </button>
             </div>
             -->
         </div>
@@ -1177,13 +1174,6 @@
 
     </div>
 
-    <!-- Botón flotante para ocultar todas las pools -->
-    <button id="fab-delete-all"
-            class="btn btn-warning fab-delete"
-            onclick="confirmDeleteAllPools()"
-            title="Oculta del listado público (reversible)">
-        🗑️ Eliminar Todas las Pools
-    </button>
 
     <script>
         // Configuración
