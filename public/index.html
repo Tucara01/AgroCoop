@@ -3585,6 +3585,9 @@ function clearAllDeadlineTimers() {
                     return;
                 }
 
+                // Mostrar notificación informativa
+                showAlert(`🔁 Preparando reembolso de la cooperativa #${poolId}...`, 'info');
+
                 // Log removed
                 // Log removed
 
@@ -3878,6 +3881,18 @@ function clearAllDeadlineTimers() {
                         </small>
                     </div>
                 ` : ''}
+
+                <!-- Botón de reembolso por tarjeta: visible solo si el pool está vencido y no financiado -->
+                ${status === 'expired' ? `
+                    <div class="pool-actions" style="margin-top: 15px; text-align: center;">
+                        <button class="btn btn-danger" onclick="refundPoolFromCard(${poolId})" style="width: 100%;">
+                            💰 Obtener Reembolso
+                        </button>
+                        <small style="color: #666; font-size: 0.9em; display: block; margin-top: 5px;">
+                            Cooperativa vencida sin llegar a la meta
+                        </small>
+                    </div>
+                ` : ''}
                 
             `;
         }
@@ -3888,6 +3903,14 @@ function clearAllDeadlineTimers() {
             document.getElementById('action-pool-id').value = String(poolId);
             // Llamar a la función de finalización normal
             await finalizePool();
+        }
+
+        // Reembolsar pool desde la tarjeta (cuando está vencido y sin financiar)
+        async function refundPoolFromCard(poolId) {
+            // reutiliza el input "acciones" para no duplicar lógica
+            const actionInput = document.getElementById('action-pool-id');
+            if (actionInput) actionInput.value = String(poolId);
+            await requestRefund(); // usa tu flujo actual (simula → firma → envía → espera)
         }
 
         // --- Intenta extraer poolId desde el returnValue
