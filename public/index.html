@@ -1126,6 +1126,35 @@
                 </small>
             </div>
 
+            <!-- Gestionar Vouchers -->
+            <div class="section">
+                <h3>🎫 Gestionar Vouchers</h3>
+                <div class="form-group">
+                    <label>Cooperativa activa:</label>
+                    <select id="voucher-pool-select" disabled>
+                        <option value="">Cargar cooperativas activas (arriba)</option>
+                    </select>
+                    <!-- (Opcional) deja el input como fallback oculto -->
+                    <input type="text" id="voucher-pool-id" style="display:none" />
+                </div>
+                <div class="form-group">
+                    <label>Monto del Voucher (XLM):</label>
+                    <input type="number" id="voucher-amount" placeholder="10" min="0.1" step="0.1" oninput="updateConversion('voucher-amount', 'voucher-conversion')" />
+                    <small id="voucher-conversion" style="color: #666; font-size: 0.9em;">≈ $10.000 CLP</small>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button class="btn btn-secondary" onclick="previewVoucher()" id="voucher-preview-btn" disabled>
+                        👁️ Preview
+                    </button>
+                    <button class="btn" onclick="createVoucher()" id="voucher-create-btn" disabled>
+                        🎫 Aportar
+                    </button>
+                </div>
+                <small style="color: #666; font-size: 0.9em; display: block; margin-top: 5px;">
+                    <strong>Próximamente:</strong> Se te pedirá autorizar y luego confirmaremos tu voucher
+                </small>
+            </div>
+
             <!-- Acciones de Pool - Comentado: ahora se gestiona desde cada tarjeta -->
             <!--
             <div class="section">
@@ -1632,6 +1661,48 @@ function refreshContribDropdownFromCache({ preserve = true } = {}) {
     sel.disabled = size === 0;
 }
 
+function refreshVoucherDropdownFromCache({ preserve = true } = {}) {
+    const sel = document.getElementById('voucher-pool-select');
+    if (!sel) return;
+
+    // Guarda el valor actual (si queremos preservar)
+    const prevValue = preserve ? sel.value : '';
+    const hasPrev   = prevValue && activePoolsCache.has(String(prevValue));
+
+    // Reconstruye opciones
+    sel.innerHTML = '';
+    const size = activePoolsCache.size;
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = size ? 'Selecciona una cooperativa…' : 'No hay cooperativas activas';
+    // El placeholder solo queda "selected" si NO teníamos selección válida
+    placeholder.selected = !hasPrev;
+    sel.appendChild(placeholder);
+
+    const truncate = (s, max=28) => (s && s.length > max) ? s.slice(0, max-1) + '…' : (s || '');
+
+    [...activePoolsCache.values()]
+        .sort((a,b) => Number(a.id) - Number(b.id))
+        .forEach(pool => {
+            const option = document.createElement('option');
+            const goalXlm   = Number(pool.goal)   / 1e7;
+            const raisedXlm = Number(pool.raised) / 1e7;
+            const pct = goalXlm > 0 ? Math.floor((raisedXlm/goalXlm)*100) : 0;
+            const d = new Date(Number(pool.deadline) * 1000);
+            const name = pool.name ? truncate(pool.name, 28) : `#${pool.id}`;
+            option.value = String(pool.id);
+            option.textContent = `${name} — ${pct}% — meta ${goalXlm} XLM — vence ${d.toLocaleDateString('es-CL')}`;
+            sel.appendChild(option);
+        });
+
+    // Vuelve a aplicar la selección si seguía siendo válida
+    if (hasPrev) sel.value = prevValue;
+
+    // Habilita/deshabilita el control
+    sel.disabled = size === 0;
+}
+
 // Máximo seguro para setTimeout (2^31-1 ms) con margen
 const MAX_TIMEOUT_MS = 2_147_000_000;
 
@@ -2004,6 +2075,8 @@ function clearAllDeadlineTimers() {
                             scheduleDeadlineWatcher(pool.id, pool.deadline);
                         }
                         refreshContribDropdownFromCache();
+                refreshVoucherDropdownFromCache();
+                        refreshVoucherDropdownFromCache();
                     }
                 } catch(_) {}
             }
@@ -2516,7 +2589,7 @@ function clearAllDeadlineTimers() {
 
         // Habilitar botones de acción (requieren wallet)
         function enableActionButtons() {
-            const buttons = ['create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn'];
+            const buttons = ['create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'voucher-preview-btn', 'voucher-create-btn'];
             buttons.forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = false;
@@ -2525,7 +2598,7 @@ function clearAllDeadlineTimers() {
 
         // Deshabilitar botones de acción (requieren wallet)
         function disableActionButtons() {
-            const buttons = ['create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn'];
+            const buttons = ['create-btn', 'contrib-btn', 'finalize-btn', 'refund-btn', 'voucher-preview-btn', 'voucher-create-btn'];
             buttons.forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = true;
@@ -3001,6 +3074,8 @@ function clearAllDeadlineTimers() {
                         // Recordar y refrescar UI
                         rememberActivePool(info.pool);
                         refreshContribDropdownFromCache();
+                refreshVoucherDropdownFromCache();
+                        refreshVoucherDropdownFromCache();
 
                         // Persistir en backend (archivo data/pools_state.json)
                         try {
@@ -3070,6 +3145,8 @@ function clearAllDeadlineTimers() {
                                     // Recordar y refrescar UI
                                     rememberActivePool(pool);
                                     refreshContribDropdownFromCache();
+                refreshVoucherDropdownFromCache();
+                        refreshVoucherDropdownFromCache();
 
                                     // Registrar en backend
                                     try {
@@ -3093,6 +3170,8 @@ function clearAllDeadlineTimers() {
                                     // UI (opcional): recordar y refrescar dropdown
                                     rememberActivePool(pool);
                                     refreshContribDropdownFromCache();
+                refreshVoucherDropdownFromCache();
+                        refreshVoucherDropdownFromCache();
                                 }
                                 // Limpiar formulario y ocultar panel
                                 document.getElementById('supplier').value = '';
@@ -3493,6 +3572,67 @@ function clearAllDeadlineTimers() {
             }
         }
 
+        // Funciones para gestión de vouchers
+        async function previewVoucher() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet para gestionar vouchers', 'danger');
+                return;
+            }
+
+            // Obtener datos del formulario
+            const sel = document.getElementById('voucher-pool-select');
+            let poolId = sel && sel.value ? Number(sel.value) : NaN;
+
+            // Fallback (si dejaste el input oculto y quieres permitir pegar manualmente)
+            if (!Number.isFinite(poolId) || poolId <= 0) {
+                const fallback = document.getElementById('voucher-pool-id');
+                if (fallback && fallback.value) poolId = Number(fallback.value);
+            }
+
+            if (!Number.isFinite(poolId) || poolId <= 0) {
+                showAlert('❌ Selecciona una cooperativa activa', 'danger');
+                return;
+            }
+
+            const amountXlm = parseFloat(document.getElementById('voucher-amount').value);
+            if (!Number.isFinite(amountXlm) || amountXlm <= 0) {
+                showAlert('❌ La cantidad debe ser mayor a 0 XLM', 'danger');
+                return;
+            }
+
+            showAlert('👁️ Función Preview - Próximamente', 'info');
+        }
+
+        async function createVoucher() {
+            if (!isConnected || !userAddress) {
+                showAlert('❌ Conecta la wallet para gestionar vouchers', 'danger');
+                return;
+            }
+
+            // Obtener datos del formulario
+            const sel = document.getElementById('voucher-pool-select');
+            let poolId = sel && sel.value ? Number(sel.value) : NaN;
+
+            // Fallback (si dejaste el input oculto y quieres permitir pegar manualmente)
+            if (!Number.isFinite(poolId) || poolId <= 0) {
+                const fallback = document.getElementById('voucher-pool-id');
+                if (fallback && fallback.value) poolId = Number(fallback.value);
+            }
+
+            if (!Number.isFinite(poolId) || poolId <= 0) {
+                showAlert('❌ Selecciona una cooperativa activa', 'danger');
+                return;
+            }
+
+            const amountXlm = parseFloat(document.getElementById('voucher-amount').value);
+            if (!Number.isFinite(amountXlm) || amountXlm <= 0) {
+                showAlert('❌ La cantidad debe ser mayor a 0 XLM', 'danger');
+                return;
+            }
+
+            showAlert('🎫 Función Aportar - Próximamente', 'info');
+        }
+
         // Finalizar un pool (solo el creador)
         // Finalizar un pool (solo el creador)
         async function finalizePool(poolIdParam) {
@@ -3826,6 +3966,7 @@ function clearAllDeadlineTimers() {
                 // Recordar el pool activo y refrescar dropdown
                 rememberActivePool(pool);
                 refreshContribDropdownFromCache();
+                refreshVoucherDropdownFromCache();
 
                 // Validar y habilitar/deshabilitar botón de reembolso
                 const refundBtn = document.getElementById('refund-btn');
@@ -4079,7 +4220,8 @@ function clearAllDeadlineTimers() {
                         try { await getPoolInfo(poolId); } catch (_) {}
                     }
                 }
-                refreshContribDropdownFromCache();               // ya la tienes
+                refreshContribDropdownFromCache();
+                refreshVoucherDropdownFromCache();               // ya la tienes
 
                 showAlert(`✅ ${pools.length} cooperativa(s) cargadas`, 'success');
             } catch (e) {
@@ -4199,6 +4341,39 @@ function clearAllDeadlineTimers() {
             // Cinturón y tirantes: asegurar que la selección se mantiene
             const sel = document.getElementById('contrib-pool-select');
             if (sel) sel.value = String(poolId);
+            
+            // También actualizar el selector de vouchers
+            const voucherSel = document.getElementById('voucher-pool-select');
+            if (voucherSel) voucherSel.value = String(poolId);
+            
+            // Validar formulario de vouchers
+            validateVoucherForm(poolId, pool);
+        }
+
+        /** Validar formulario de vouchers */
+        function validateVoucherForm(poolId, pool) {
+            const remaining = BigInt(pool.goal) - BigInt(pool.raised);
+            const input = document.getElementById('voucher-amount');
+            const previewBtn = document.getElementById('voucher-preview-btn');
+            const createBtn = document.getElementById('voucher-create-btn');
+
+            if (!input || !previewBtn || !createBtn) return;
+
+            if (remaining <= 0n || pool.finalized) {
+                input.max = '0';
+                input.placeholder = 'Meta alcanzada';
+                input.value = '';
+                previewBtn.disabled = true;
+                createBtn.disabled = true;
+                return;
+            }
+
+            const maxXlm = stroopsToXlm(remaining);
+            input.max = String(maxXlm);
+            input.placeholder = `máx ${maxXlm} XLM`;
+            input.dataset.maxStroops = remaining.toString();
+            previewBtn.disabled = false;
+            createBtn.disabled = false;
         }
 
         /** Si el usuario teclea más del máximo, lo recortamos y avisamos */
@@ -4212,6 +4387,19 @@ function clearAllDeadlineTimers() {
                 showAlert(`Se ajustó automáticamente al máximo permitido (${max} XLM).`, 'info');
             }
             updateConversion('contrib-amount', 'contrib-conversion');
+        }
+
+        /** Si el usuario teclea más del máximo en vouchers, lo recortamos y avisamos */
+        function enforceVoucherInputMax() {
+            const input = document.getElementById('voucher-amount');
+            if (!input) return;
+            const max = parseFloat(input.max || '0');
+            const val = parseFloat(input.value || '0');
+            if (max > 0 && val > max) {
+                input.value = String(max);
+                showAlert(`Se ajustó automáticamente al máximo permitido (${max} XLM).`, 'info');
+            }
+            updateConversion('voucher-amount', 'voucher-conversion');
         }
 
         // --- Helper: llamada cruda al RPC (asegura usar "hash")
@@ -4352,11 +4540,29 @@ function clearAllDeadlineTimers() {
                     if (Number.isFinite(id) && id > 0) setContribMaxFor(id);
                 });
             }
+            
+            // Limitar por pool seleccionada para vouchers
+            const voucherSelPool = document.getElementById('voucher-pool-select');
+            if (voucherSelPool) {
+                voucherSelPool.addEventListener('change', e => {
+                    const id = Number(e.target.value);
+                    if (Number.isFinite(id) && id > 0) {
+                        const pool = activePoolsCache.get(String(id));
+                        if (pool) validateVoucherForm(id, pool);
+                    }
+                });
+            }
 
             // Limitar mientras escribe
             const amt = document.getElementById('contrib-amount');
             if (amt) {
                 amt.addEventListener('input', enforceContribInputMax);
+            }
+            
+            // Limitar mientras escribe para vouchers
+            const voucherAmt = document.getElementById('voucher-amount');
+            if (voucherAmt) {
+                voucherAmt.addEventListener('input', enforceVoucherInputMax);
             }
         });
     </script>
