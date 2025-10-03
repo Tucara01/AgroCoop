@@ -1,0 +1,1 @@
+correr servidor con npx nodemon server.js
