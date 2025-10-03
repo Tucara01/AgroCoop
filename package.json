@@ -9,8 +9,10 @@
   },
   "dependencies": {
     "@stellar/freighter-api": "^5.0.0",
+    "@stellar/stellar-sdk": "^12.1.0",
     "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2"
   },
   "keywords": [
     "stellar",
@@ -19,5 +21,14 @@
     "collective-purchase"
   ],
   "author": "Ideathon Team",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tucara01/AgroCoop.git"
+  },
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Tucara01/AgroCoop/issues"
+  },
+  "homepage": "https://github.com/Tucara01/AgroCoop#readme"
 }
