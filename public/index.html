@@ -53,7 +53,9 @@
         }
         
         .header {
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin-bottom: 40px;
             padding: 30px 20px;
             border-bottom: 3px solid #8b4513;
@@ -63,16 +65,22 @@
             margin-left: auto;
             margin-right: auto;
         }
-        
-        .header::before {
-            content: "🌾";
+
+        .header-logo {
             position: absolute;
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 2em;
-            animation: sway 3s ease-in-out infinite;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
         }
+
+        .header-content {
+            text-align: center;
+        }
+        
         
         .header::after {
             content: "";
@@ -962,6 +970,42 @@
             text-overflow: ellipsis;  /* "…" si es muy largo */
             display: inline-block;
         }
+
+        /* --- FAB borrar todas las pools --- */
+        .fab-delete {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 10001;    /* sobre todo */
+        }
+
+        /* Evita que el FAB tape contenido al fondo */
+        .container { padding-bottom: 120px; }
+
+        /* Apilar formularios y estirarlos */
+        .grid.stack-forms {
+            grid-template-columns: 1fr;    /* 1 columna en todas las resoluciones */
+            gap: 24px;
+            max-width: 1400px;             /* estirado pero controlado */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Que los paneles ocupen todo el ancho disponible del grid */
+        .grid.stack-forms .section {
+            width: 100%;
+        }
+
+        /* Inputs cómodos a lo ancho */
+        .grid.stack-forms .form-group input,
+        .grid.stack-forms .form-group select {
+            width: 100%;
+        }
+
+        /* Botón principal con touch target cómodo */
+        .grid.stack-forms .btn {
+            min-width: 220px;
+        }
     </style>
 </head>
 <body>
@@ -970,8 +1014,11 @@
     
     <div class="container">
         <div class="header">
-            <h1>🌾 Agro Coop del Sur</h1>
-            <p>Cooperativa rural para compras colectivas de insumos agrícolas y leña</p>
+            <img src="logo.png" alt="Agro Coop del Sur" class="header-logo" />
+            <div class="header-content">
+                <h1>Agro Coop del Sur</h1>
+                <p>Cooperativa rural para compras colectivas de insumos agrícolas</p>
+            </div>
         </div>
 
         <!-- Sección de Wallet - Esquina Superior Derecha -->
@@ -1021,7 +1068,7 @@
         </div>
 
         <!-- Grid principal -->
-        <div class="grid">
+        <div class="grid stack-forms">
             <!-- Crear Pool -->
             <div class="section">
                 <h3>🌱 Crear Cooperativa</h3>
@@ -1031,14 +1078,14 @@
                         type="text"
                         id="pool-name"
                         placeholder="Ej: Leña de invierno para la sede"
-                        maxlength="40"
+                        maxlength="20"
                     />
-                    <small style="color:#666;font-size:0.9em;">Máx 40 caracteres</small>
+                    <small style="color:#666;font-size:0.9em;">Máx 20 caracteres</small>
                 </div>
                 <div class="form-group">
                     <label>Proveedor de Insumos:</label>
-                    <input type="text" id="supplier" placeholder="GABC... o nombre del proveedor" />
-                    <small style="color: #666; font-size: 0.9em;">Dirección Stellar o alias verificado</small>
+                    <input type="text" id="supplier" placeholder="GABC... dirección Stellar" />
+                    <small style="color: #666; font-size: 0.9em;">Solo direcciones Stellar</small>
                 </div>
                 <div class="form-group">
                     <label>Meta de Recaudación (XLM):</label>
@@ -1079,7 +1126,8 @@
                 </small>
             </div>
 
-            <!-- Acciones de Pool -->
+            <!-- Acciones de Pool - Comentado: ahora se gestiona desde cada tarjeta -->
+            <!--
             <div class="section">
                 <h3>⚡ Gestionar Cooperativa</h3>
                 <div class="form-group">
@@ -1092,10 +1140,8 @@
                 <button class="btn btn-danger" onclick="requestRefund()" id="refund-btn" disabled>
                     💰 Obtener Reembolso
                 </button>
-                <button class="btn btn-warning" onclick="confirmDeleteAllPools()" id="delete-all-btn">
-                    🗑️ Eliminar Todas las Pools
-                </button>
             </div>
+            -->
         </div>
 
         <!-- 🧩 Plantillas rápidas -->
@@ -1127,6 +1173,7 @@
         </div>
 
     </div>
+
 
     <script>
         // Configuración
@@ -3413,7 +3460,8 @@ function clearAllDeadlineTimers() {
                 // 🔄 Refrescar la tarjeta del pool (con pequeño retardo para consistencia eventual)
                 try {
                     // Asegura que el selector de "Acciones" también apunte a este pool
-                    document.getElementById('action-pool-id').value = String(poolId);
+                    const _inp = document.getElementById('action-pool-id');
+                    if (_inp) _inp.value = String(poolId);
                     // Pequeño retardo para asegurar consistencia eventual
                     setTimeout(async () => {
                         try {
@@ -3447,18 +3495,16 @@ function clearAllDeadlineTimers() {
 
         // Finalizar un pool (solo el creador)
         // Finalizar un pool (solo el creador)
-        async function finalizePool() {
+        async function finalizePool(poolIdParam) {
             if (!isConnected || !userAddress) {
-                showAlert('❌ Conecta la wallet para finalizar', 'danger');
-                return;
+                showAlert('❌ Conecta la wallet para finalizar', 'danger'); return;
+            }
+            const poolId = Number(poolIdParam ?? document.getElementById('action-pool-id')?.value);
+            if (!Number.isFinite(poolId) || poolId <= 0) {
+                showAlert('❌ Ingresa un ID de pool válido', 'danger'); return;
             }
 
             try {
-                const poolId = parseInt(document.getElementById('action-pool-id').value);
-                if (!poolId || poolId <= 0) {
-                    showAlert('❌ Ingresa un ID de pool válido', 'danger');
-                    return;
-                }
 
                 // Mostrar panel de proceso
                 showProcessPanel();
@@ -3547,7 +3593,8 @@ function clearAllDeadlineTimers() {
                 clearDeadlineWatcher(poolId);
 
                 // Refrescar card del pool (marcará "Finalizado")
-                document.getElementById('action-pool-id').value = String(poolId);
+                const _inp = document.getElementById('action-pool-id');
+                if (_inp) _inp.value = String(poolId);
                 setTimeout(async () => { 
                     try { 
                         const info = await getPoolInfo(poolId);
@@ -3571,19 +3618,16 @@ function clearAllDeadlineTimers() {
         }
 
         // Solicitar reembolso de un pool fallido
-        async function requestRefund() {
+        async function requestRefund(poolIdParam) {
             if (!isConnected || !userAddress) {
-                showAlert('❌ Conecta la wallet para solicitar reembolso', 'danger');
-                return;
+                showAlert('❌ Conecta la wallet para solicitar reembolso', 'danger'); return;
+            }
+            const poolId = Number(poolIdParam ?? document.getElementById('action-pool-id')?.value);
+            if (!Number.isFinite(poolId) || poolId <= 0) {
+                showAlert('❌ Ingresa un ID de pool válido', 'danger'); return;
             }
 
             try {
-                const poolId = parseInt(document.getElementById('action-pool-id').value);
-
-                if (!poolId || poolId <= 0) {
-                    showAlert('❌ Ingresa un ID de pool válido', 'danger');
-                    return;
-                }
 
                 // Mostrar notificación informativa
                 showAlert(`🔁 Preparando reembolso de la cooperativa #${poolId}...`, 'info');
@@ -3899,18 +3943,12 @@ function clearAllDeadlineTimers() {
 
         // Finalizar pool desde la tarjeta (cuando está financiado)
         async function finalizePoolFromCard(poolId) {
-            // Establecer el ID en el formulario de acciones
-            document.getElementById('action-pool-id').value = String(poolId);
-            // Llamar a la función de finalización normal
-            await finalizePool();
+            await finalizePool(poolId);
         }
 
         // Reembolsar pool desde la tarjeta (cuando está vencido y sin financiar)
         async function refundPoolFromCard(poolId) {
-            // reutiliza el input "acciones" para no duplicar lógica
-            const actionInput = document.getElementById('action-pool-id');
-            if (actionInput) actionInput.value = String(poolId);
-            await requestRefund(); // usa tu flujo actual (simula → firma → envía → espera)
+            await requestRefund(poolId);
         }
 
         // --- Intenta extraer poolId desde el returnValue
